@@ -1,35 +1,31 @@
-# SearchTides LV Dashboard
+# SearchTides Content Dashboard
 
-Real-time LV dashboard pulling data from three SeaTable bases.
+Dashboard for article/content pipeline LV (Lead Value) from SeaTable **HSS**: table **CM**, view **Default View_for dashboard**. Internal **BTF** targets come from **QUOTAS** (same rules as the former linkbuilding “Internal” quotas).
 
 ## Setup
 
-### 1. GitHub
-Push this folder to a new GitHub repository (can be private).
+### Vercel
 
-### 2. Vercel
-1. Go to [vercel.com](https://vercel.com) → New Project → Import from GitHub
-2. Select this repository
-3. Click **Deploy** (default settings are fine)
+1. Import the repository in [vercel.com](https://vercel.com) and deploy (default settings are fine).
 
-### 3. Environment Variables
-In Vercel → Project Settings → Environment Variables, add:
+### Environment variables
 
-| Name | Value |
-|------|-------|
-|
+| Name | Description |
+|------|-------------|
+| `OM_API_TOKEN` | SeaTable API token for the **HSS** base (CM + QUOTAS). |
 
-After adding variables, click **Redeploy**.
+No other tokens are required.
 
-### 4. Done
-Your dashboard is live at `your-project.vercel.app`
+After changing variables, redeploy.
 
-## Data sources
-- **HSS base** — internal OM data + QUOTAS (internal quotas per client)
-- **LBT base** — external linkbuilders (FanDuel, FanDuel Casino, FanDuel Racing, CreditNinja)
-- **CMS Master** — journalists/press links for FanDuel only (filtered by Live Link Date current month)
+## Data model
+
+- **CM** — rows aggregated by client (`CLIENT*` / `Client` variants) and status (`C STATUS` / emoji-prefixed variants). **Link Value** is summed as LV. **Records** mode uses row counts per bucket.
+- **QUOTAS** — monthly LV quota per client (`LV Quota` / emoji-prefixed variants), current calendar month and year.
+
+Statuses are validated against a fixed list; unknown values appear in the UI under “Other / unknown” and trigger API warnings.
 
 ## Notes
-- Company quotas and AS fee per LV are stored in browser localStorage — set them once per month via the "edit" button
-- Data refreshes automatically on page load, or manually via the Refresh button
-- Vercel caches API responses for 5 minutes to avoid hitting SeaTable rate limits
+
+- API responses are cached for about 5 minutes (`s-maxage=300`) to reduce SeaTable rate limits.
+- Refresh the page or use the **Refresh** button to reload.

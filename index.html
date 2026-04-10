@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
 <meta name="googlebot" content="noindex, nofollow">
-<title>SearchTides - LINKBUILDING DASHBOARD</title>
+<title>SearchTides — Content Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,26 +20,22 @@
   --muted:    #888580;
   --muted2:   #5a5754;
   --purple:       #5b4de0;
-  --purple-light: #7c6af5;
   --purple-dim:   rgba(91,77,224,0.08);
   --purple-bdr:   rgba(91,77,224,0.22);
   --teal:       #0e9e80;
-  --teal-light: #12b894;
   --teal-dim:   rgba(14,158,128,0.08);
   --teal-bdr:   rgba(14,158,128,0.22);
   --amber:      #c47a1a;
-  --amber-dim:  rgba(196,122,26,0.08);
-  --amber-bdr:  rgba(196,122,26,0.22);
   --red:    #c0392b;
   --orange: #e07820;
   --green:  #1a8a52;
+  --bar-queue: #9b9893;
   --fd: 'Libre Baskerville', serif;
   --fs: 'Inter', sans-serif;
   --fm: 'DM Mono', monospace;
 }
 body { font-family: var(--fs); background: var(--bg); color: var(--text); min-height: 100vh; font-variant-numeric: tabular-nums; font-size: 14px; }
 
-/* LOADING */
 #loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 1.5rem; }
 .load-wordmark { font-family: var(--fd); font-size: 12px; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 12px; }
 .load-wordmark::before, .load-wordmark::after { content: ''; display: block; width: 32px; height: 1px; background: var(--border2); }
@@ -53,7 +49,6 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 .error-box p { font-size: 13px; color: var(--muted2); font-family: var(--fm); margin-bottom: 1rem; }
 .retry-btn { padding: 8px 20px; background: var(--purple); color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; font-family: var(--fs); cursor: pointer; letter-spacing: 0.06em; text-transform: uppercase; }
 
-/* DASHBOARD */
 #dashboard { display: none; max-width: 1500px; margin: 0 auto; padding: 0 2rem 4rem; }
 .topnav { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 0; border-bottom: 1px solid var(--border2); flex-wrap: wrap; gap: 1rem; }
 .nav-brand { font-family: var(--fd); font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
@@ -66,113 +61,101 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 .refresh-btn .spin-sm { width: 10px; height: 10px; border: 1.5px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
 .refresh-btn.loading .spin-sm { display: block; }
 
-.tabs { display: flex; border-bottom: 1px solid var(--border2); margin-bottom: 1.75rem; }
-.tab { padding: 13px 22px; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; font-family: var(--fm); color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; }
-.tab:hover { color: var(--muted2); }
-.tab.active { color: var(--purple); border-bottom-color: var(--purple); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.warn-banner { display: none; background: rgba(196,122,26,0.12); border: 1px solid rgba(196,122,26,0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 1.25rem; font-size: 12px; font-family: var(--fm); color: var(--muted2); }
+.warn-banner.visible { display: block; }
+.warn-banner strong { color: var(--amber); display: block; margin-bottom: 6px; font-family: var(--fs); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.warn-banner ul { margin: 0; padding-left: 1.2rem; }
 
-.summary-bar { display: grid; grid-template-columns: repeat(5,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 1.75rem; }
+.controls { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.controls-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--fm); color: var(--muted); }
+.unit-toggle { display: flex; border: 1px solid var(--border2); border-radius: 6px; overflow: hidden; }
+.unit-toggle button { font-family: var(--fm); font-size: 11px; padding: 8px 16px; border: none; background: var(--surface2); color: var(--muted2); cursor: pointer; transition: background 0.15s, color 0.15s; }
+.unit-toggle button.active { background: var(--purple-dim); color: var(--purple); font-weight: 600; }
+
+.summary-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 1.75rem; }
 .sum-tile { background: var(--surface); padding: 1.1rem 1.4rem; transition: background 0.15s; }
 .sum-tile:hover { background: var(--surface2); }
 .sum-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-family: var(--fm); }
-.sum-value { font-family: var(--fd); font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
-.sv-teal    { color: var(--teal); }
-.sv-purple  { color: var(--purple); }
+.sum-value { font-family: var(--fd); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.sv-teal { color: var(--teal); }
+.sv-purple { color: var(--purple); }
 .sv-neutral { color: var(--text); }
-.sv-ok      { color: var(--green); }
-.sv-warn    { color: var(--orange); }
-.sv-over    { color: var(--red); }
-.sv-amber   { color: var(--amber); }
-.pipeline-indicator { margin-top: 6px; font-size: 10px; font-family: var(--fm); color: var(--muted); display: flex; align-items: center; gap: 5px; }
-.pip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.pip-ok   { background: var(--green); }
-.pip-warn { background: var(--orange); }
+.sv-ok { color: var(--green); }
+.sv-warn { color: var(--orange); }
+.sv-over { color: var(--red); }
+.sv-amber { color: var(--amber); }
 
-.clients-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; }
+.charts-row { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; margin-bottom: 1.75rem; align-items: start; }
+@media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
 
+.chart-panel { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 1.25rem 1.5rem; }
+.chart-title { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; font-family: var(--fm); color: var(--muted); margin-bottom: 1rem; }
+.pie-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pie-legend { font-size: 11px; font-family: var(--fm); width: 100%; }
+.pie-legend-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.pie-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; margin-right: 6px; }
+.pie-dot.done { background: var(--green); }
+.pie-dot.progress { background: var(--orange); }
+.pie-dot.queue { background: var(--bar-queue); }
+
+.stacked-list { display: flex; flex-direction: column; gap: 10px; }
+.stacked-row { display: grid; grid-template-columns: 120px 1fr 52px; gap: 10px; align-items: center; font-size: 11px; font-family: var(--fm); }
+.stacked-name { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stacked-bar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; background: var(--surface3); }
+.stacked-seg { height: 100%; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); min-width: 0; }
+.stacked-seg.done { background: var(--green); }
+.stacked-seg.progress { background: var(--orange); }
+.stacked-seg.queue { background: var(--bar-queue); }
+.stacked-total { text-align: right; color: var(--muted2); }
+
+.data-table-wrap { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 1.75rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--fm); }
+.data-table th { text-align: left; padding: 12px 14px; background: var(--surface2); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.diff-neg { color: var(--red); }
+.diff-pos { color: var(--green); }
+
+.clients-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; }
 .client-card { background: var(--surface); display: flex; flex-direction: column; }
 .client-card:hover { background: var(--surface2); }
-.client-card:nth-child(odd)  { border-top: 3px solid var(--purple); }
+.client-card:nth-child(odd) { border-top: 3px solid var(--purple); }
 .client-card:nth-child(even) { border-top: 3px solid var(--teal); }
-.company-card { background: var(--surface); display: flex; flex-direction: column; }
-.company-card:hover { background: var(--surface2); }
-.company-card:nth-child(odd)  { border-top: 3px solid var(--amber); }
-.company-card:nth-child(even) { border-top: 3px solid var(--purple); }
 
 .card-header { padding: 20px 24px 16px; display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); }
 .client-name { font-family: var(--fd); font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
 .quota-pill { font-size: 12px; font-family: var(--fm); color: var(--muted2); background: var(--surface3); border: 1px solid var(--border2); padding: 4px 10px; border-radius: 3px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .quota-pill strong { color: var(--text); font-weight: 500; }
-.edit-quota-btn { font-size: 10px; color: var(--purple); cursor: pointer; background: none; border: none; font-family: var(--fm); padding: 0; margin-left: 8px; }
 
 .progress-wrap { padding: 13px 24px 15px; border-bottom: 1px solid var(--border); }
 .progress-labels { display: flex; justify-content: space-between; font-size: 11px; font-family: var(--fm); color: var(--muted); margin-bottom: 7px; font-variant-numeric: tabular-nums; }
 .progress-pct { font-weight: 500; }
-.ppc-red    { color: var(--red); }
+.ppc-red { color: var(--red); }
 .ppc-orange { color: var(--orange); }
-.ppc-green  { color: var(--green); }
+.ppc-green { color: var(--green); }
 .progress-track { height: 3px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
 .progress-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(0.16,1,0.3,1); }
-.pf-red    { background: var(--red); }
+.pf-red { background: var(--red); }
 .pf-orange { background: var(--orange); }
-.pf-green  { background: var(--green); }
+.pf-green { background: var(--green); }
 
-.funnels { display: grid; grid-template-columns: 3fr 2fr; flex: 1; }
 .funnel-col { padding: 18px 22px 22px; }
-.funnel-col:first-child { border-right: 1px solid var(--border); }
-.funnel-heading { font-size: 9px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; font-family: var(--fm); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-.fh-btf { color: var(--teal); }
-.fh-top { color: var(--purple); }
-.funnel-total { font-family: var(--fd); font-size: 42px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
-.ft-btf { color: var(--teal); }
-.ft-top { color: var(--purple); }
-.status-list { display: flex; flex-direction: column; gap: 8px; }
+.funnel-heading { font-size: 9px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; font-family: var(--fm); margin-bottom: 12px; color: var(--teal); display: flex; align-items: center; gap: 6px; }
+.funnel-total { font-family: var(--fd); font-size: 36px; font-weight: 700; letter-spacing: -1px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: var(--teal); }
+.status-list { display: flex; flex-direction: column; gap: 6px; }
 .status-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.s-name { font-size: 12px; font-family: var(--fm); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.s-name-pub { color: var(--teal); font-weight: 500; }
-.s-val { font-size: 13px; font-family: var(--fm); font-weight: 500; color: var(--text); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-.s-val-pub { color: var(--teal); font-weight: 600; font-size: 15px; }
+.s-name { font-size: 11px; font-family: var(--fm); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.s-val { font-size: 12px; font-family: var(--fm); font-weight: 500; color: var(--text); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
-.sources { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); }
-.sources.single { grid-template-columns: 1fr; }
-.source-col { background: var(--surface); padding: 16px 20px 18px; }
-.source-heading { font-size: 9px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; font-family: var(--fm); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-.sh-internal { color: var(--teal); }
-.sh-external { color: var(--purple); }
-.sh-journ    { color: var(--amber); }
-.source-total { font-family: var(--fd); font-size: 40px; font-weight: 700; letter-spacing: -2px; line-height: 1; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
-.st-internal { color: var(--teal); }
-.st-external { color: var(--purple); }
-.st-journ    { color: var(--amber); }
-.st-na       { color: var(--muted); }
-.source-sub { font-size: 11px; font-family: var(--fm); color: var(--muted); }
-
-.asfee-wrap { padding: 12px 24px; border-top: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.asfee-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: var(--fm); color: var(--muted); white-space: nowrap; }
-.asfee-input { width: 100px; background: var(--surface); border: 1px solid var(--border2); border-radius: 3px; color: var(--text); font-family: var(--fm); font-size: 13px; padding: 5px 8px; outline: none; font-variant-numeric: tabular-nums; }
-.asfee-input:focus { border-color: var(--purple-bdr); }
-.asfee-save { padding: 5px 10px; background: var(--purple-dim); border: 1px solid var(--purple-bdr); border-radius: 3px; color: var(--purple); font-size: 10px; font-weight: 600; font-family: var(--fm); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
-.asfee-result { font-size: 12px; font-family: var(--fm); font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; margin-left: 4px; }
-.asfee-hint { color: var(--muted); font-weight: 400; font-size: 11px; }
-
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; z-index: 100; }
-.modal-box { background: var(--surface); border: 1px solid var(--border2); border-radius: 10px; padding: 2rem; width: 100%; max-width: 440px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
-.modal-title { font-family: var(--fd); font-size: 20px; font-weight: 700; margin-bottom: 0.3rem; }
-.modal-sub { font-size: 12px; color: var(--muted); font-family: var(--fm); margin-bottom: 1.5rem; }
-.modal-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 12px; }
-.modal-label { font-size: 13px; color: var(--text); min-width: 150px; font-weight: 500; }
-.modal-input { flex: 1; background: var(--surface2); border: 1px solid var(--border2); border-radius: 3px; color: var(--text); font-family: var(--fm); font-size: 13px; padding: 7px 10px; outline: none; font-variant-numeric: tabular-nums; }
-.modal-input:focus { border-color: var(--purple-bdr); }
-.modal-footer { display: flex; gap: 10px; margin-top: 1.5rem; }
-.modal-save { flex: 1; padding: 10px; background: var(--purple); color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; font-family: var(--fs); letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
-.modal-cancel { padding: 10px 18px; background: transparent; color: var(--muted2); border: 1px solid var(--border2); border-radius: 4px; font-size: 12px; font-family: var(--fs); cursor: pointer; }
+.section-title { font-family: var(--fd); font-size: 18px; font-weight: 700; margin: 2rem 0 1rem; letter-spacing: -0.02em; }
+.section-title:first-of-type { margin-top: 0; }
 
 @media (max-width: 900px) {
   .clients-grid { grid-template-columns: 1fr; }
-  .summary-bar  { grid-template-columns: repeat(3,1fr); }
-  .sources      { grid-template-columns: 1fr !important; }
+  .summary-bar { grid-template-columns: repeat(2, 1fr); }
+  .stacked-row { grid-template-columns: 1fr; }
+ .stacked-total { text-align: left; }
 }
 </style>
 </head>
@@ -180,7 +163,7 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 
 <div id="loading-screen">
   <div class="load-wordmark">SearchTides</div>
-  <h1 class="load-title">LINKBUILDING <em>DASHBOARD</em></h1>
+  <h1 class="load-title">CONTENT <em>DASHBOARD</em></h1>
   <div class="load-status" id="load-status">
     <div class="spinner"></div>
     <span id="load-text">Loading data...</span>
@@ -189,66 +172,375 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 
 <div id="dashboard">
   <div class="topnav">
-    <div class="nav-brand"><div class="nav-dot"></div>SearchTides<span>/ LINKBUILDING DASHBOARD</span></div>
+    <div class="nav-brand"><div class="nav-dot"></div>SearchTides<span>/ CONTENT DASHBOARD</span></div>
     <div class="nav-right">
       <span class="nav-meta" id="nav-meta"></span>
-      <button class="refresh-btn" id="refresh-btn" onclick="loadData()">
+      <button type="button" class="refresh-btn" id="refresh-btn" onclick="loadData()">
         <div class="spin-sm"></div>
         Refresh
       </button>
     </div>
   </div>
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('internal')">Internal Team</div>
-    <div class="tab" onclick="switchTab('company')">Company Overview</div>
-  </div>
-  <div class="tab-content active" id="tab-internal">
-    <div class="summary-bar" id="summary-internal"></div>
-    <div class="clients-grid" id="grid-internal"></div>
-  </div>
-  <div class="tab-content" id="tab-company">
-    <div class="summary-bar" id="summary-company"></div>
-    <div class="clients-grid" id="grid-company"></div>
-  </div>
-</div>
 
-<div class="modal-overlay" id="quota-modal" style="display:none">
-  <div class="modal-box">
-    <div class="modal-title">Company Quotas</div>
-    <div class="modal-sub" id="modal-sub"></div>
-    <div id="modal-rows"></div>
-    <div class="modal-footer">
-      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-save" onclick="saveQuotas()">Save quotas</button>
+  <div class="warn-banner" id="warn-banner" aria-live="polite"></div>
+
+  <div class="controls">
+    <span class="controls-label">Unit</span>
+    <div class="unit-toggle" role="group" aria-label="Display unit">
+      <button type="button" id="unit-lv" class="active" onclick="setUnit('lv')">Lead value (LV)</button>
+      <button type="button" id="unit-rec" onclick="setUnit('records')">Records</button>
     </div>
   </div>
+
+  <div class="summary-bar" id="summary-bar"></div>
+
+  <h2 class="section-title">Overview</h2>
+  <div class="charts-row">
+    <div class="chart-panel">
+      <div class="chart-title">Global status mix</div>
+      <div class="pie-wrap" id="pie-container"></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">By project (stacked)</div>
+      <div class="stacked-list" id="stacked-bars"></div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Capacity signals</h2>
+  <div class="summary-bar" id="bottleneck-bar" style="grid-template-columns: repeat(2, 1fr);"></div>
+
+  <h2 class="section-title">Data table</h2>
+  <div class="data-table-wrap">
+    <table class="data-table" id="data-table">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th class="num">BTF target (LV)</th>
+          <th class="num">Current LV</th>
+          <th class="num">Difference</th>
+          <th class="num">Records</th>
+        </tr>
+      </thead>
+      <tbody id="data-table-body"></tbody>
+    </table>
+  </div>
+
+  <h2 class="section-title">Project detail</h2>
+  <div class="clients-grid" id="clients-grid"></div>
 </div>
 
 <script>
-var BTF = ["Published","Pending","Content Requested","Ready for Delivery"];
-var TOP = ["Site Approved","Negotiation"];
-var LBT_CLIENTS  = ["FanDuel","FanDuel Casino","FanDuel Racing","CreditNinja"];
-var PRESS_CLIENT = "FanDuel";
-var SK_QUOTAS = "st_company_quotas";
-var SK_ASFEE  = "st_asfee_values";
-var globalClients = [];
+var unit = "lv";
+var globalJson = null;
 
-function getQ() { try { return JSON.parse(localStorage.getItem(SK_QUOTAS)||"{}"); } catch(e) { return {}; } }
-function getA() { try { return JSON.parse(localStorage.getItem(SK_ASFEE)||"{}");  } catch(e) { return {}; } }
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 
-function n(v) { var x = parseFloat(v); return isNaN(x) ? 0 : x; }
-function fmt(v) { return Math.round(v||0).toLocaleString("en-US"); }
-function pct(val, total) { return total > 0 ? Math.round(val / total * 100) : 0; }
-function pcClass(p) { return p < 50 ? "red" : p < 90 ? "orange" : "green"; }
-function sumClass(pc) { return pc === "red" ? "sv-over" : pc === "orange" ? "sv-warn" : "sv-ok"; }
-function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function n(v) {
+  var x = parseFloat(v);
+  return isNaN(x) ? 0 : x;
+}
 
-function switchTab(tab) {
-  document.querySelectorAll(".tab").forEach(function(t,i) {
-    t.classList.toggle("active",(tab==="internal"&&i===0)||(tab==="company"&&i===1));
+function pickMetric(obj) {
+  if (!obj) return 0;
+  return unit === "lv" ? n(obj.lv) : n(obj.records);
+}
+
+function fmtMetric(v) {
+  if (unit === "records") return Math.round(v).toLocaleString("en-US");
+  var r = Math.round(v * 100) / 100;
+  return r.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+function pct(val, total) {
+  return total > 0 ? Math.round((val / total) * 100) : 0;
+}
+
+function pcClass(p) {
+  return p < 50 ? "red" : p < 90 ? "orange" : "green";
+}
+
+function sumClass(pc) {
+  return pc === "red" ? "sv-over" : pc === "orange" ? "sv-warn" : "sv-ok";
+}
+
+function setUnit(u) {
+  unit = u;
+  document.getElementById("unit-lv").classList.toggle("active", u === "lv");
+  document.getElementById("unit-rec").classList.toggle("active", u === "records");
+  if (globalJson) renderAll();
+}
+
+function renderWarnings(warnings) {
+  var el = document.getElementById("warn-banner");
+  if (!warnings || !warnings.length) {
+    el.classList.remove("visible");
+    el.innerHTML = "";
+    return;
+  }
+  el.classList.add("visible");
+  el.innerHTML =
+    "<strong>Data validation</strong><ul>" +
+    warnings.map(function (w) {
+      return "<li>" + esc(w.message || w.type || "") + "</li>";
+    }).join("") +
+    "</ul>";
+}
+
+function renderSummary() {
+  var g = globalJson.global;
+  var cat = g.by_category;
+  var done = pickMetric(cat.done);
+  var prog = pickMetric(cat.in_progress);
+  var que = pickMetric(cat.queue);
+  var att = g.quota_attainment_pct;
+  var attPc = pcClass(att);
+  var totalUnit = unit === "lv" ? g.total_lv : g.total_records;
+
+  document.getElementById("summary-bar").innerHTML =
+    '<div class="sum-tile"><div class="sum-label">Total (' +
+    (unit === "lv" ? "LV" : "Records") +
+    ')</div><div class="sum-value sv-teal">' +
+    fmtMetric(totalUnit) +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Total BTF target (LV)</div><div class="sum-value sv-neutral">' +
+    (Math.round(g.total_quota * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Quota attainment (LV)</div><div class="sum-value ' +
+    sumClass(attPc) +
+    '">' +
+    att +
+    '%</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Done</div><div class="sum-value sv-ok">' +
+    fmtMetric(done) +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">In progress</div><div class="sum-value sv-warn">' +
+    fmtMetric(prog) +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Queue</div><div class="sum-value sv-neutral">' +
+    fmtMetric(que) +
+    "</div></div>";
+}
+
+function renderPie() {
+  var cat = globalJson.global.by_category;
+  var d = pickMetric(cat.done);
+  var i = pickMetric(cat.in_progress);
+  var q = pickMetric(cat.queue);
+  var t = d + i + q;
+  var r = 72;
+  var cx = 80;
+  var cy = 80;
+
+  function arc(a0, a1) {
+    var x0 = cx + r * Math.cos(a0);
+    var y0 = cy + r * Math.sin(a0);
+    var x1 = cx + r * Math.cos(a1);
+    var y1 = cy + r * Math.sin(a1);
+    var large = a1 - a0 > Math.PI ? 1 : 0;
+    return "M " + cx + " " + cy + " L " + x0 + " " + y0 + " A " + r + " " + r + " 0 " + large + " 1 " + x1 + " " + y1 + " Z";
+  }
+
+  var parts = [];
+  if (t <= 0) {
+    parts.push(
+      '<svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="72" fill="var(--surface3)"/></svg>'
+    );
+  } else {
+    var a0 = -Math.PI / 2;
+    var ad = (d / t) * 2 * Math.PI;
+    var ai = (i / t) * 2 * Math.PI;
+    var aq = (q / t) * 2 * Math.PI;
+    var a1 = a0 + ad;
+    var a2 = a1 + ai;
+    var a3 = a2 + aq;
+    var paths = "";
+    if (d > 0) paths += '<path d="' + arc(a0, a1) + '" fill="var(--green)"/>';
+    if (i > 0) paths += '<path d="' + arc(a1, a2) + '" fill="var(--orange)"/>';
+    if (q > 0) paths += '<path d="' + arc(a2, a3) + '" fill="var(--bar-queue)"/>';
+    parts.push('<svg width="160" height="160" viewBox="0 0 160 160">' + paths + "</svg>");
+  }
+
+  var pd = t > 0 ? pct(d, t) : 0;
+  var pi = t > 0 ? pct(i, t) : 0;
+  var pq = t > 0 ? pct(q, t) : 0;
+
+  parts.push(
+    '<div class="pie-legend">' +
+      '<div class="pie-legend-row"><span><span class="pie-dot done"></span>Done</span><span>' +
+      pd +
+      "% (" +
+      fmtMetric(d) +
+      ")</span></div>" +
+      '<div class="pie-legend-row"><span><span class="pie-dot progress"></span>In progress</span><span>' +
+      pi +
+      "% (" +
+      fmtMetric(i) +
+      ")</span></div>" +
+      '<div class="pie-legend-row"><span><span class="pie-dot queue"></span>Queue</span><span>' +
+      pq +
+      "% (" +
+      fmtMetric(q) +
+      ")</span></div>" +
+      "</div>"
+  );
+
+  document.getElementById("pie-container").innerHTML = parts.join("");
+}
+
+function renderStacked() {
+  var clients = globalJson.clients;
+  var html = "";
+  clients.forEach(function (c) {
+    var cat = c.by_category;
+    var d = pickMetric(cat.done);
+    var i = pickMetric(cat.in_progress);
+    var q = pickMetric(cat.queue);
+    var t = d + i + q;
+    var wd = t > 0 ? (d / t) * 100 : 0;
+    var wi = t > 0 ? (i / t) * 100 : 0;
+    var wq = t > 0 ? (q / t) * 100 : 0;
+    html +=
+      '<div class="stacked-row">' +
+      '<span class="stacked-name">' +
+      esc(c.client) +
+      '</span><div class="stacked-bar">' +
+      (d > 0 ? '<span class="stacked-seg done" style="width:' + wd + '%"></span>' : "") +
+      (i > 0 ? '<span class="stacked-seg progress" style="width:' + wi + '%"></span>' : "") +
+      (q > 0 ? '<span class="stacked-seg queue" style="width:' + wq + '%"></span>' : "") +
+      (t === 0 ? '<span class="stacked-seg queue" style="width:100%"></span>' : "") +
+      '</div><span class="stacked-total">' +
+      fmtMetric(t) +
+      "</span></div>";
   });
-  document.getElementById("tab-internal").classList.toggle("active",tab==="internal");
-  document.getElementById("tab-company").classList.toggle("active",tab==="company");
+  document.getElementById("stacked-bars").innerHTML = html || "<p class=\"muted\">No data</p>";
+}
+
+function renderBottleneck() {
+  var b = globalJson.global.bottleneck;
+  var r = b.ready_for_edits;
+  var cr = b.content_requested;
+  document.getElementById("bottleneck-bar").innerHTML =
+    '<div class="sum-tile"><div class="sum-label">Ready for Edits</div><div class="sum-value sv-warn">' +
+    fmtMetric(pickMetric(r)) +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">LV: ' +
+    fmtMetric(r.lv) +
+    " · Records: " +
+    Math.round(r.records) +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Content Requested (queue)</div><div class="sum-value sv-amber">' +
+    fmtMetric(pickMetric(cr)) +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">LV: ' +
+    fmtMetric(cr.lv) +
+    " · Records: " +
+    Math.round(cr.records) +
+    "</div></div>";
+}
+
+function renderTable() {
+  var tbody = document.getElementById("data-table-body");
+  var rows = "";
+  globalJson.clients.forEach(function (c) {
+    var quota = n(c.quota);
+    var curLv = n(c.total_lv);
+    var diff = curLv - quota;
+    var rec = n(c.total_records);
+    var diffCls = diff < 0 ? "diff-neg" : diff > 0 ? "diff-pos" : "";
+    rows +=
+      "<tr><td>" +
+      esc(c.client) +
+      '</td><td class="num">' +
+      fmtMetric(quota) +
+      '</td><td class="num">' +
+      fmtMetric(curLv) +
+      '</td><td class="num ' +
+      diffCls +
+      '">' +
+      (diff > 0 ? "+" : "") +
+      fmtMetric(diff) +
+      '</td><td class="num">' +
+      Math.round(rec).toLocaleString("en-US") +
+      "</td></tr>";
+  });
+  tbody.innerHTML = rows;
+}
+
+function renderCards() {
+  var grid = document.getElementById("clients-grid");
+  grid.innerHTML = "";
+  var order = globalJson.status_order || [];
+
+  globalJson.clients.forEach(function (c) {
+    var quota = n(c.quota);
+    var totalLv = n(c.total_lv);
+    var p = pct(totalLv, quota);
+    var pc = pcClass(p);
+
+    var statusRows = order      .map(function (s) {
+        var cell = c.by_status[s];
+        var v = unit === "lv" ? n(cell.lv) : n(cell.records);
+        return (
+          '<div class="status-row"><span class="s-name">' +
+          esc(s) +
+          '</span><span class="s-val">' +
+          fmtMetric(v) +
+          "</span></div>"
+        );
+      })
+      .join("");
+
+    if (c.by_status_other) {
+      var o = c.by_status_other;
+      statusRows +=
+        '<div class="status-row"><span class="s-name" style="color:var(--red)">Other / unknown</span><span class="s-val">' +
+        fmtMetric(unit === "lv" ? o.lv : o.records) +
+        "</span></div>";
+    }
+
+    var card = document.createElement("div");
+    card.className = "client-card";
+    card.innerHTML =
+      '<div class="card-header"><div class="client-name">' +
+      esc(c.client) +
+      '</div><div class="quota-pill">BTF <strong>' +
+      fmtMetric(quota) +
+      "</strong> LV</div></div>" +
+      '<div class="progress-wrap">' +
+      '<div class="progress-labels"><span>Total LV vs BTF target</span><span class="progress-pct ppc-' +
+      pc +
+      '">' +
+      p +
+      "% · " +
+      fmtMetric(totalLv) +
+      " / " +
+      fmtMetric(quota) +
+      "</span></div>" +
+      '<div class="progress-track"><div class="progress-fill pf-' +
+      pc +
+      '" style="width:' +
+      Math.min(p, 100) +
+      '%"></div></div></div>' +
+      '<div class="funnel-col"><div class="funnel-heading"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>By status</div>' +
+      '<div class="funnel-total">' +
+      fmtMetric(unit === "lv" ? totalLv : n(c.total_records)) +
+      "</div>" +
+      '<div class="status-list">' +
+      statusRows +
+      "</div></div>";
+
+    grid.appendChild(card);
+  });
+}
+
+function renderAll() {
+  renderWarnings(globalJson.warnings);
+  renderSummary();
+  renderPie();
+  renderStacked();
+  renderBottleneck();
+  renderTable();
+  renderCards();
 }
 
 async function loadData() {
@@ -265,196 +557,30 @@ async function loadData() {
     var json = await res.json();
     if (!json.ok) throw new Error(json.error || "Unknown error");
 
-    globalClients = json.clients;
+    globalJson = json;
     var loaded = new Date(json.generated).toLocaleTimeString("en-US");
-    document.getElementById("nav-meta").textContent = json.clients.length + " clients - " + json.prod_month + " - loaded " + loaded;
-
-    renderInternal(json.clients);
-    renderCompany(json.clients);
+    document.getElementById("nav-meta").textContent =
+      json.clients.length + " projects · " + json.prod_month + " · loaded " + loaded;
 
     loadScreen.style.display = "none";
     dash.style.display = "block";
 
-  } catch(err) {
+    renderAll();
+  } catch (err) {
     document.getElementById("load-text").textContent = "Error: " + err.message;
     loadScreen.innerHTML =
       '<div class="load-wordmark">SearchTides</div>' +
-      '<h1 class="load-title">LINKBUILDING <em>DASHBOARD</em></h1>' +
+      '<h1 class="load-title">CONTENT <em>DASHBOARD</em></h1>' +
       '<div class="error-box">' +
-        '<h3>Could not load data</h3>' +
-        '<p>' + esc(err.message) + '</p>' +
-        '<button class="retry-btn" onclick="loadData()">Retry</button>' +
-      '</div>';
+      '<h3>Could not load data</h3>' +
+      '<p>' +
+      esc(err.message) +
+      '</p>' +
+      '<button type="button" class="retry-btn" onclick="loadData()">Retry</button>' +
+      "</div>";
   } finally {
     btn.classList.remove("loading");
   }
-}
-
-function renderInternal(clients) {
-  var totPub=0, totBTF=0, totTop=0, totQ=0;
-  clients.forEach(function(c) {
-    totPub += n(c["Published"]);
-    BTF.forEach(function(s) { totBTF += n(c[s]); });
-    TOP.forEach(function(s) { totTop += n(c[s]); });
-    totQ += n(c["quota"]);
-  });
-  var op=pct(totPub,totQ), pc=pcClass(op);
-  var pipeline=totBTF+totTop, pipOk=pipeline>=totQ, pipPct=pct(pipeline,totQ);
-
-  document.getElementById("summary-internal").innerHTML =
-    '<div class="sum-tile"><div class="sum-label">Published total</div><div class="sum-value sv-teal">'+fmt(totPub)+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">BTF total (published incl.)</div><div class="sum-value sv-teal">'+fmt(totBTF)+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">Top Funnel total</div><div class="sum-value sv-purple">'+fmt(totTop)+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">Internal quota</div><div class="sum-value sv-neutral">'+fmt(totQ)+'</div>'+
-      '<div class="pipeline-indicator"><div class="pip-dot '+(pipOk?"pip-ok":"pip-warn")+'"></div>Pipeline '+fmt(pipeline)+' - '+pipPct+'% '+(pipOk?"covered":"not yet")+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">Quota attainment</div><div class="sum-value '+sumClass(pc)+'">'+op+'%</div></div>';
-
-  var grid=document.getElementById("grid-internal");
-  grid.innerHTML="";
-  clients.forEach(function(c) {
-    var quota=n(c["quota"]), pub=n(c["Published"]);
-    var btfTotal=BTF.reduce(function(s,k){return s+n(c[k]);},0);
-    var topTotal=TOP.reduce(function(s,k){return s+n(c[k]);},0);
-    var pipeline=btfTotal+topTotal, pipOk=pipeline>=quota, pipPct=pct(pipeline,quota);
-    var p=pct(pub,quota), pc=pcClass(p);
-
-    var btfRows=BTF.map(function(s){
-      var v=n(c[s]), isPub=(s==="Published");
-      return '<div class="status-row"><span class="s-name'+(isPub?" s-name-pub":"")+'">'+s+'</span><span class="s-val'+(isPub?" s-val-pub":"")+'">'+fmt(v)+'</span></div>';
-    }).join("");
-    var topRows=TOP.map(function(s){
-      return '<div class="status-row"><span class="s-name">'+s+'</span><span class="s-val">'+fmt(n(c[s]))+'</span></div>';
-    }).join("");
-
-    var card=document.createElement("div"); card.className="client-card";
-    card.innerHTML=
-      '<div class="card-header"><div class="client-name">'+esc(c["client"])+'</div><div class="quota-pill">quota <strong>'+fmt(quota)+'</strong></div></div>'+
-      '<div class="progress-wrap">'+
-        '<div class="progress-labels"><span>Published vs quota</span><span class="progress-pct ppc-'+pc+'">'+p+'%</span></div>'+
-        '<div class="progress-track"><div class="progress-fill pf-'+pc+'" style="width:'+Math.min(p,100)+'%"></div></div>'+
-        '<div class="pipeline-indicator" style="margin-top:6px"><div class="pip-dot '+(pipOk?"pip-ok":"pip-warn")+'"></div>Pipeline '+fmt(pipeline)+' ('+pipPct+'% of quota)'+(pipOk?" - covered":"")+'</div>'+
-      '</div>'+
-      '<div class="funnels">'+
-        '<div class="funnel-col"><div class="funnel-heading fh-btf"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>Bottom Funnel (published incl.)</div><div class="funnel-total ft-btf">'+fmt(btfTotal)+'</div><div class="status-list">'+btfRows+'</div></div>'+
-        '<div class="funnel-col"><div class="funnel-heading fh-top"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--purple)"/></svg>Top Funnel</div><div class="funnel-total ft-top">'+fmt(topTotal)+'</div><div class="status-list">'+topRows+'</div></div>'+
-      '</div>';
-    grid.appendChild(card);
-  });
-}
-
-function renderCompany(clients) {
-  var storedA=getA();
-  var totInt=0,totExt=0,totJourn=0,totQ=0;
-  clients.forEach(function(c) {
-    totInt   += n(c["Published"]);
-    totExt   += LBT_CLIENTS.indexOf(c["client"])>-1 ? n(c["ext_published"]) : 0;
-    totJourn += c["client"]===PRESS_CLIENT ? n(c["journalists"]) : 0;
-    totQ     += n(c["company_quota"]);
-  });
-  var total=totInt+totExt+totJourn, op=pct(total,totQ), pc=pcClass(op);
-
-  document.getElementById("summary-company").innerHTML =
-    '<div class="sum-tile"><div class="sum-label">Internal published</div><div class="sum-value sv-teal">'+fmt(totInt)+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">External LBT</div><div class="sum-value sv-purple">'+fmt(totExt)+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">Journalists</div><div class="sum-value sv-amber">'+fmt(totJourn)+'</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">Company quota</div><div class="sum-value sv-neutral">'+fmt(totQ)+
-      '</div></div>'+
-    '<div class="sum-tile"><div class="sum-label">Quota attainment</div><div class="sum-value '+sumClass(pc)+'">'+op+'%</div></div>';
-
-  var grid=document.getElementById("grid-company");
-  grid.innerHTML="";
-  clients.forEach(function(c) {
-    var name=c["client"];
-    var hasExt   = LBT_CLIENTS.indexOf(name)>-1;
-    var hasJourn = name===PRESS_CLIENT;
-    var isSimple = !hasExt && !hasJourn;
-
-    var intPub=n(c["Published"]);
-    var extPub=hasExt?n(c["ext_published"]):0;
-    var journVal=hasJourn?n(c["journalists"]):0;
-    var cq=n(c["company_quota"]);
-    var asfee=n(storedA[name]);
-    var total=intPub+extPub+journVal;
-    var p=pct(total,cq), pc=pcClass(p);
-    var feeTotal=asfee>0?total*asfee:null;
-
-    var sourcesHTML="";
-    if (isSimple) {
-      sourcesHTML='<div class="sources single"><div class="source-col">'+
-        '<div class="source-heading sh-internal"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>Internal published</div>'+
-        '<div class="source-total st-internal">'+fmt(intPub)+'</div><div class="source-sub">All links from internal team</div></div></div>';
-    } else {
-      var extHTML=hasExt
-        ?'<div class="source-total st-external">'+fmt(extPub)+'</div><div class="source-sub">Published only</div>'
-        :'<div class="source-total st-na">-</div><div class="source-sub">Not applicable</div>';
-
-      // Journalists column — only show for FanDuel (exact), hide entirely for others
-      if (hasExt && !hasJourn) {
-        // FanDuel Casino / Racing / CreditNinja: 2 columns only
-        sourcesHTML='<div class="sources" style="grid-template-columns:1fr 1fr">'+
-          '<div class="source-col"><div class="source-heading sh-internal"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>Internal</div><div class="source-total st-internal">'+fmt(intPub)+'</div><div class="source-sub">Published</div></div>'+
-          '<div class="source-col"><div class="source-heading sh-external"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--purple)"/></svg>External LBT</div>'+extHTML+'</div>'+
-          '</div>';
-      } else {
-        // FanDuel: 3 columns with Journalists
-        var journHTML='<div class="source-total st-journ">'+fmt(journVal)+'</div><div class="source-sub">From CMS Master</div>';
-        sourcesHTML='<div class="sources">'+
-          '<div class="source-col"><div class="source-heading sh-internal"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>Internal</div><div class="source-total st-internal">'+fmt(intPub)+'</div><div class="source-sub">Published</div></div>'+
-          '<div class="source-col"><div class="source-heading sh-external"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--purple)"/></svg>External LBT</div>'+extHTML+'</div>'+
-          '<div class="source-col"><div class="source-heading sh-journ"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--amber)"/></svg>Journalists</div>'+journHTML+'</div>'+
-          '</div>';
-      }
-    }
-
-    var feeHTML=feeTotal!==null
-      ?'<span class="asfee-result">Total fee: $'+Math.round(feeTotal).toLocaleString("en-US")+'</span>'
-      :'<span class="asfee-result"><span class="asfee-hint">enter fee per LV above</span></span>';
-
-    var card=document.createElement("div"); card.className="company-card";
-    card.innerHTML=
-      '<div class="card-header"><div class="client-name">'+esc(name)+'</div>'+
-        '<div class="quota-pill">quota <strong>'+fmt(cq)+'</strong></div></div>'+
-      '<div class="progress-wrap">'+
-        '<div class="progress-labels"><span>Total published vs company quota</span><span class="progress-pct ppc-'+pc+'">'+p+'% - '+fmt(total)+' / '+fmt(cq)+'</span></div>'+
-        '<div class="progress-track"><div class="progress-fill pf-'+pc+'" style="width:'+Math.min(p,100)+'%"></div></div></div>'+
-      sourcesHTML+
-      '<div class="asfee-wrap"><span class="asfee-label">AS fee / LV</span>'+
-        '<input class="asfee-input" type="number" id="asfee-'+esc(name)+'" value="'+(asfee||"")+'" placeholder="$ per LV" step="0.01">'+
-        '<button class="asfee-save" onclick="saveAsfee(\''+esc(name)+'\')">Save</button>'+
-        feeHTML+'</div>';
-    grid.appendChild(card);
-  });
-}
-
-function saveAsfee(name) {
-  var inp=document.getElementById("asfee-"+name);
-  if (!inp) return;
-  var stored=getA();
-  stored[name]=parseFloat(inp.value)||0;
-  localStorage.setItem(SK_ASFEE,JSON.stringify(stored));
-  renderCompany(globalClients);
-}
-
-function openModal() {
-  var stored=getQ();
-  document.getElementById("modal-rows").innerHTML=globalClients.map(function(c){
-    return '<div class="modal-row"><label class="modal-label">'+esc(c["client"])+'</label>'+
-      '<input class="modal-input" type="number" id="mq-'+esc(c["client"])+'" value="'+(stored[c["client"]]||"")+'" placeholder="0"></div>';
-  }).join("");
-  document.getElementById("modal-sub").textContent="Company quotas for "+
-    new Date().toLocaleString("en-US",{month:"long",year:"numeric"})+" - saved in browser memory";
-  document.getElementById("quota-modal").style.display="flex";
-}
-function closeModal() { document.getElementById("quota-modal").style.display="none"; }
-function saveQuotas() {
-  var stored={};
-  globalClients.forEach(function(c){
-    var inp=document.getElementById("mq-"+esc(c["client"]));
-    if(inp) stored[c["client"]]=parseFloat(inp.value)||0;
-  });
-  localStorage.setItem(SK_QUOTAS,JSON.stringify(stored));
-  closeModal();
-  renderCompany(globalClients);
 }
 
 loadData();
