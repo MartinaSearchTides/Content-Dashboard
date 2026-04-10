@@ -124,9 +124,49 @@ function resolveStatus(row) {
 }
 
 function resolveLinkValue(row) {
-  const v = pick(row, D + "Link Value", "Link Value", "LV", D + " LV");
-  const n = parseFloat(resolve(v));
+  const v = pick(row, D + "Link Value", "Link Value", D + " Link Value");
+  const n = parseFloat(String(resolve(v)).replace(/,/g, ""));
   return isNaN(n) ? 0 : n;
+}
+
+/** Parse YYYY-MM-DD (or ISO start) or numeric date from SeaTable; compare in calendar Y/M (local). */
+function parseYmd(cellVal) {
+  if (cellVal == null || cellVal === "") return null;
+  const resolved = resolve(cellVal);
+  if (resolved == null || resolved === "") return null;
+  if (typeof resolved === "number" && !isNaN(resolved)) {
+    const d = new Date(resolved);
+    if (isNaN(d.getTime())) return null;
+    return { y: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+  }
+  const s = String(resolved).trim().substring(0, 10);
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
+  if (!m) return null;
+  return { y: +m[1], month: +m[2], day: +m[3] };
+}
+
+function filterCmRowsByRequestedMonth(rows, year, month, warnings) {
+  const out = [];
+  let skippedNoDate = 0;
+  for (const row of rows) {
+    const raw = pick(row, D + "DATE REQUESTED", "DATE REQUESTED", D + "Date Requested", "Date Requested");
+    const ymd = parseYmd(raw);
+    if (!ymd) {
+      skippedNoDate += 1;
+      continue;
+    }
+    if (ymd.y !== year || ymd.month !== month) continue;
+    out.push(row);
+  }
+  if (skippedNoDate > 0) {
+    warnings.push({
+      type: "cm_missing_date_requested",
+      message:
+        skippedNoDate +
+        " CM row(s) skipped: DATE REQUESTED missing or not parseable as YYYY-MM-DD."
+    });
+  }
+  return out;
 }
 
 function monthShort() {
@@ -139,6 +179,10 @@ function prodMonth() {
 
 function currentYear() {
   return new Date().getFullYear();
+}
+
+function currentMonthNum() {
+  return new Date().getMonth() + 1;
 }
 
 function emptyStatusMap() {
@@ -172,6 +216,7 @@ export default async function handler(req, res) {
     const PM = prodMonth();
     const MS = monthShort();
     const CY = currentYear();
+    const CAL_M = currentMonthNum();
 
     const hssAccess = await getAccess(HSS_TOKEN);
     if (!hssAccess.dtable_server || !hssAccess.dtable_uuid || !hssAccess.access_token) {
@@ -217,6 +262,8 @@ export default async function handler(req, res) {
       }
     }
 
+    const cmRowsMonth = filterCmRowsByRequestedMonth(cmRows, CY, CAL_M, warnings);
+
     const quotas = {};
     for (const row of quotaRows) {
       const client = resolve(row[D + "Client"] || row["Client"]);
@@ -235,7 +282,7 @@ export default async function handler(req, res) {
 
     let cmLvSumCheck = 0;
 
-    for (const row of cmRows) {
+    for (const row of cmRowsMonth) {
       const client = resolveClient(row);
       const statusRaw = resolveStatus(row);
       const status = statusRaw ? String(statusRaw).trim() : "";
@@ -291,8 +338,8 @@ export default async function handler(req, res) {
         message: skippedNoClient + " CM row(s) skipped: missing client/project column."
       });
     }
-    if (cmRows.length > 0 && skippedNoClient === cmRows.length) {
-      const sample = cmRows[0];
+    if (cmRowsMonth.length > 0 && skippedNoClient === cmRowsMonth.length) {
+      const sample = cmRowsMonth[0];
       warnings.push({
         type: "client_column_mismatch",
         message:
@@ -420,7 +467,9 @@ export default async function handler(req, res) {
         bottleneck
       },
       debug: {
-        cm_rows: cmRows.length,
+        cm_rows_fetched: cmRows.length,
+        cm_rows_date_requested_month: cmRowsMonth.length,
+        date_requested_filter_ym: CY + "-" + String(CAL_M).padStart(2, "0"),
         cm_view: cmViewUsed || "(all rows)",
         quotas_loaded: Object.keys(quotas).length,
         clients: allClients.length
