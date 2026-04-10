@@ -177,6 +177,10 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 
   <div class="summary-bar" id="summary-bar"></div>
 
+  <h2 class="section-title">Content signals (counts, all clients)</h2>
+  <p style="font-size:12px;color:var(--muted);font-family:var(--fm);margin:-0.5rem 0 1rem;">Rows in current DATE REQUESTED month. Not LV.</p>
+  <div class="summary-bar" id="insights-bar" style="grid-template-columns: repeat(2, 1fr); max-width: 900px;"></div>
+
   <h2 class="section-title">By project</h2>
   <div class="clients-grid" id="clients-grid"></div>
 </div>
@@ -298,7 +302,7 @@ function renderCards() {
 
     if (pickMetric(c.other) > 0) {
       leftRows +=
-        '<div class="status-row"><span class="s-name" style="color:var(--red)">Other / unknown</span><span class="s-val">' +
+        '<div class="status-row"><span class="s-name" style="color:var(--red)">Other (Link formula)</span><span class="s-val">' +
         fmtMetric(c.other) +
         "</span></div>";
     }
@@ -317,6 +321,12 @@ function renderCards() {
         fmtMetric(pickMetric(cell)) +
         "</span></div>";
     });
+    if (pickMetric(c.cr_other_detail) > 0) {
+      rightDetail +=
+        '<div class="status-row"><span class="s-name" style="color:var(--amber)">Other C STATUS (in CR)</span><span class="s-val">' +
+        fmtMetric(c.cr_other_detail) +
+        "</span></div>";
+    }
 
     var card = document.createElement("div");
     card.className = "client-card";
@@ -368,9 +378,26 @@ function renderCards() {
   });
 }
 
+function renderInsights() {
+  var ins = globalJson.content_insights;
+  if (!ins) return;
+  var cr = ins.c_status_content_requested || { row_count: 0, with_topic_suggestions_count: 0 };
+  var rfe = ins.c_status_ready_for_edits_row_count || 0;
+  document.getElementById("insights-bar").innerHTML =
+    '<div class="sum-tile"><div class="sum-label">C STATUS Content Requested</div><div class="sum-value sv-neutral">' +
+    cr.row_count.toLocaleString("en-US") +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.9">With topic suggestions (non-empty)</div><div class="sum-value sv-teal" style="font-size:22px;margin-top:4px">' +
+    cr.with_topic_suggestions_count.toLocaleString("en-US") +
+    "</div></div>" +
+    '<div class="sum-tile"><div class="sum-label">C STATUS Ready for Edits</div><div class="sum-value sv-warn">' +
+    rfe.toLocaleString("en-US") +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">Article count</div></div>';
+}
+
 function renderAll() {
   renderWarnings(globalJson.warnings);
   renderSummary();
+  renderInsights();
   renderCards();
 }
 

@@ -20,10 +20,12 @@ After changing variables, redeploy.
 
 ## Data model
 
-- **CM** — only rows whose **DATE REQUESTED** (`YYYY-MM-DD`) falls in the **current calendar month** are included. LV is the sum of **Link Value** only (not other LV columns). **Records** mode uses row counts per bucket. Grouping by client (`CLIENT*` / `Client` variants) and status (`C STATUS`).
+- **CM** — only rows whose **DATE REQUESTED** (`YYYY-MM-DD`) falls in the **current calendar month** are included. LV from **Link Value**. Clients from `CLIENT*` / `Client` (and fallbacks).
 - **QUOTAS** — monthly LV quota per client (`LV Quota` / emoji-prefixed variants), current calendar month and year.
 
-Dashboard buckets: **Published** (includes CM statuses Published, Ready for Delivery, Delivered to BO), **Pending**, **Content Requested** (total of the literal Content Requested status plus Assigned, Revisions Required, Revisions Complete, Ready for Edits, Editing, For Charlotte's Review). Unknown C STATUS values roll into **Other / unknown** with API warnings.
+**Link formula** drives **Published**, **Pending**, and **Content Requested** LV totals (those three labels only). **C STATUS** fills the breakdown under Content Requested when Link formula is Content Requested. Unexpected Link formula goes to **Other (Link formula)**; unexpected C STATUS in that case to **Other C STATUS (in CR)**.
+
+**Content signals** (global counts, not LV): rows with **C STATUS** = Content Requested (and subset with non-empty **Topic Suggestions**); rows with **C STATUS** = Ready for Edits.
 
 ## Notes
 

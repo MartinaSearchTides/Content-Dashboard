@@ -3,12 +3,13 @@ const SERVER = "https://seatable.searchtides.com";
 /** SeaTable diamond emoji prefix (same pattern as QUOTAS Client column). */
 const D = "\u{1F539}";
 
-/** Published: CM rows counted like linkbuilding "Published" + delivered states. */
-const STATUS_PUBLISHED = new Set(["Published", "Ready for Delivery", "Delivered to BO"]);
+/** Link formula (linkbuilding): only these three drive Published / Pending / Content Requested totals. */
+const LF_PUBLISHED = "Published";
+const LF_PENDING = "Pending";
+const LF_CONTENT_REQUESTED = "Content Requested";
+const LINK_FORMULA_ALLOWED = new Set([LF_PUBLISHED, LF_PENDING, LF_CONTENT_REQUESTED]);
 
-const STATUS_PENDING = new Set(["Pending"]);
-
-/** Literal queue row + pipeline under Content Requested (detail excludes the umbrella label in API order). */
+/** C STATUS (content only): breakdown under Link formula = Content Requested. */
 const CR_LITERAL = "Content Requested";
 
 const CONTENT_REQUESTED_DETAIL = [
@@ -20,12 +21,7 @@ const CONTENT_REQUESTED_DETAIL = [
   "For Charlotte's Review"
 ];
 
-const ALL_KNOWN_STATUS = new Set([
-  ...STATUS_PUBLISHED,
-  ...STATUS_PENDING,
-  CR_LITERAL,
-  ...CONTENT_REQUESTED_DETAIL
-]);
+const CSTATUS_UNDER_CR = new Set([CR_LITERAL, ...CONTENT_REQUESTED_DETAIL]);
 
 const CM_VIEW = "Default View_for dashboard";
 
@@ -119,6 +115,22 @@ function resolveStatus(row) {
   return resolve(v);
 }
 
+function resolveLinkFormula(row) {
+  const v = pick(row, D + "Link formula", "Link formula", D + "Link Formula", "Link Formula");
+  if (v == null || v === "") return "";
+  const r = resolve(v);
+  return r ? String(r).trim() : "";
+}
+
+function hasTopicSuggestions(row) {
+  const v = pick(row, D + "Topic Suggestions", "Topic Suggestions", D + " Topic Suggestions");
+  if (v == null || v === "") return false;
+  const r = resolve(v);
+  if (r == null || r === "") return false;
+  if (typeof r === "number") return !isNaN(r);
+  return String(r).trim().length > 0;
+}
+
 function resolveLinkValue(row) {
   const v = pick(row, D + "Link Value", "Link Value", D + " Link Value");
   const n = parseFloat(String(resolve(v)).replace(/,/g, ""));
@@ -199,6 +211,7 @@ function emptyClientBuckets() {
     content_requested: metricZero(),
     cr_literal: metricZero(),
     cr_detail,
+    cr_other_detail: metricZero(),
     other: metricZero()
   };
 }
@@ -207,25 +220,35 @@ function roundLv(x) {
   return Math.round(x * 100) / 100;
 }
 
-function addRowToBuckets(b, status, lv) {
-  if (STATUS_PUBLISHED.has(status)) {
+/**
+ * linkFormula from "Link formula"; cStatus from "C STATUS".
+ * LV totals: Published/Pending/Content Requested from link formula only.
+ * C STATUS breakdown only when link formula is Content Requested.
+ */
+function addRowToBuckets(b, linkFormula, cStatus, lv) {
+  const lf = linkFormula || "";
+  const cs = cStatus || "";
+
+  if (lf === LF_PUBLISHED) {
     addMetric(b.published, lv);
     return;
   }
-  if (STATUS_PENDING.has(status)) {
+  if (lf === LF_PENDING) {
     addMetric(b.pending, lv);
     return;
   }
-  if (status === CR_LITERAL) {
-    addMetric(b.cr_literal, lv);
+  if (lf === LF_CONTENT_REQUESTED) {
     addMetric(b.content_requested, lv);
+    if (cs === CR_LITERAL) {
+      addMetric(b.cr_literal, lv);
+    } else if (CONTENT_REQUESTED_DETAIL.includes(cs)) {
+      addMetric(b.cr_detail[cs], lv);
+    } else {
+      addMetric(b.cr_other_detail, lv);
+    }
     return;
   }
-  if (CONTENT_REQUESTED_DETAIL.includes(status)) {
-    addMetric(b.cr_detail[status], lv);
-    addMetric(b.content_requested, lv);
-    return;
-  }
+
   addMetric(b.other, lv);
 }
 
@@ -239,6 +262,7 @@ function mergeBuckets(into, from) {
   mergeMetric(into.pending, from.pending);
   mergeMetric(into.content_requested, from.content_requested);
   mergeMetric(into.cr_literal, from.cr_literal);
+  mergeMetric(into.cr_other_detail, from.cr_other_detail);
   mergeMetric(into.other, from.other);
   for (const s of CONTENT_REQUESTED_DETAIL) {
     mergeMetric(into.cr_detail[s], from.cr_detail[s]);
@@ -323,13 +347,23 @@ export default async function handler(req, res) {
     }
 
     const byClient = {};
-    const unknownStatusCounts = {};
+    const unknownLfCounts = {};
+    const unknownCrCstatus = {};
     let skippedNoClient = 0;
 
     let cmLvSumCheck = 0;
 
+    const contentInsights = {
+      c_status_content_requested: {
+        row_count: 0,
+        with_topic_suggestions_count: 0
+      },
+      c_status_ready_for_edits_row_count: 0
+    };
+
     for (const row of cmRowsMonth) {
       const client = resolveClient(row);
+      const lf = resolveLinkFormula(row);
       const statusRaw = resolveStatus(row);
       const status = statusRaw ? String(statusRaw).trim() : "";
       const lv = resolveLinkValue(row);
@@ -341,15 +375,28 @@ export default async function handler(req, res) {
 
       cmLvSumCheck += lv;
 
+      if (status === CR_LITERAL) {
+        contentInsights.c_status_content_requested.row_count += 1;
+        if (hasTopicSuggestions(row)) {
+          contentInsights.c_status_content_requested.with_topic_suggestions_count += 1;
+        }
+      }
+      if (status === "Ready for Edits") {
+        contentInsights.c_status_ready_for_edits_row_count += 1;
+      }
+
       if (!byClient[client]) {
         byClient[client] = emptyClientBuckets();
       }
 
-      if (status && !ALL_KNOWN_STATUS.has(status)) {
-        unknownStatusCounts[status] = (unknownStatusCounts[status] || 0) + 1;
+      if (lf && !LINK_FORMULA_ALLOWED.has(lf)) {
+        unknownLfCounts[lf] = (unknownLfCounts[lf] || 0) + 1;
+      }
+      if (lf === LF_CONTENT_REQUESTED && status && !CSTATUS_UNDER_CR.has(status)) {
+        unknownCrCstatus[status] = (unknownCrCstatus[status] || 0) + 1;
       }
 
-      addRowToBuckets(byClient[client], status, lv);
+      addRowToBuckets(byClient[client], lf, status, lv);
     }
 
     if (skippedNoClient > 0) {
@@ -371,10 +418,21 @@ export default async function handler(req, res) {
       });
     }
 
-    for (const k of Object.keys(unknownStatusCounts)) {
+    for (const k of Object.keys(unknownLfCounts)) {
       warnings.push({
-        type: "unknown_status",
-        message: "Unknown C STATUS value: " + JSON.stringify(k) + " (" + unknownStatusCounts[k] + " rows)."
+        type: "unknown_link_formula",
+        message: "Unknown Link formula value: " + JSON.stringify(k) + " (" + unknownLfCounts[k] + " rows)."
+      });
+    }
+    for (const k of Object.keys(unknownCrCstatus)) {
+      warnings.push({
+        type: "unknown_c_status_under_cr",
+        message:
+          "C STATUS not in content breakdown while Link formula is Content Requested: " +
+          JSON.stringify(k) +
+          " (" +
+          unknownCrCstatus[k] +
+          " rows)."
       });
     }
 
@@ -397,6 +455,7 @@ export default async function handler(req, res) {
         content_requested: b.content_requested,
         cr_literal: b.cr_literal,
         cr_detail: b.cr_detail,
+        cr_other_detail: b.cr_other_detail,
         other: b.other
       };
 
@@ -432,11 +491,13 @@ export default async function handler(req, res) {
         content_requested: globalBuckets.content_requested,
         cr_literal: globalBuckets.cr_literal,
         cr_detail: globalBuckets.cr_detail,
+        cr_other_detail: globalBuckets.cr_other_detail,
         other: globalBuckets.other,
         total_quota: roundLv(totQuota),
         quota_attainment_pct: quotaAttainmentPct,
         total_records: globalTotalRecords
       },
+      content_insights: contentInsights,
       debug: {
         cm_rows_fetched: cmRows.length,
         cm_rows_date_requested_month: cmRowsMonth.length,
