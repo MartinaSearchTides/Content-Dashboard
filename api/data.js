@@ -92,8 +92,30 @@ function pick(row, ...keys) {
 }
 
 function resolveClient(row) {
-  const v = pick(row, "CLIENT*", "Client", D + "Client", "client");
-  return resolve(v);
+  const v = pick(
+    row,
+    "CLIENT*",
+    D + "CLIENT*",
+    "Client",
+    D + "Client",
+    "client",
+    "Brand",
+    D + "Brand",
+    "Customer",
+    D + "Customer",
+    "Project"
+  );
+  const out = resolve(v);
+  if (out) return out;
+  for (const k of Object.keys(row)) {
+    if (/status/i.test(k)) continue;
+    const kn = String(k);
+    if (/client/i.test(kn) || /brand/i.test(kn) || /^customer$/i.test(kn.trim())) {
+      const r = resolve(row[k]);
+      if (r) return r;
+    }
+  }
+  return null;
 }
 
 function resolveStatus(row) {
@@ -267,6 +289,18 @@ export default async function handler(req, res) {
       warnings.push({
         type: "missing_client",
         message: skippedNoClient + " CM row(s) skipped: missing client/project column."
+      });
+    }
+    if (cmRows.length > 0 && skippedNoClient === cmRows.length) {
+      const sample = cmRows[0];
+      warnings.push({
+        type: "client_column_mismatch",
+        message:
+          "No CM row resolved a client. Sample column keys: " +
+          Object.keys(sample)
+            .slice(0, 45)
+            .map(k => JSON.stringify(k))
+            .join(", ")
       });
     }
 
