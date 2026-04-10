@@ -553,9 +553,18 @@ async function loadData() {
 
   try {
     var res = await fetch("/api/data");
-    if (!res.ok) throw new Error("API error " + res.status);
-    var json = await res.json();
-    if (!json.ok) throw new Error(json.error || "Unknown error");
+    var text = await res.text();
+    var json;
+    try {
+      json = JSON.parse(text);
+    } catch (parseErr) {
+      throw new Error(
+        "API returned non-JSON (HTTP " + res.status + "): " + (text || "").slice(0, 280)
+      );
+    }
+    if (!json.ok || !res.ok) {
+      throw new Error(json.error || "HTTP " + res.status);
+    }
 
     globalJson = json;
     var loaded = new Date(json.generated).toLocaleTimeString("en-US");

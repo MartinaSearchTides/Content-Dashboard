@@ -141,7 +141,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=60");
 
-  const HSS_TOKEN = process.env.OM_API_TOKEN;
+  const HSS_TOKEN = (process.env.OM_API_TOKEN || "").trim();
   if (!HSS_TOKEN) {
     return res.status(500).json({ ok: false, error: "Missing env var: OM_API_TOKEN" });
   }
@@ -152,11 +152,48 @@ export default async function handler(req, res) {
     const CY = currentYear();
 
     const hssAccess = await getAccess(HSS_TOKEN);
+    if (!hssAccess.dtable_server || !hssAccess.dtable_uuid || !hssAccess.access_token) {
+      return res.status(500).json({
+        ok: false,
+        error: "Invalid SeaTable token response: missing dtable_server, dtable_uuid, or access_token."
+      });
+    }
 
-    const [quotaRows, cmRows] = await Promise.all([
-      listRows(hssAccess, "QUOTAS", ""),
-      listRows(hssAccess, "CM", CM_VIEW)
-    ]);
+    const warnings = [];
+
+    let quotaRows;
+    try {
+      quotaRows = await listRows(hssAccess, "QUOTAS", "");
+    } catch (e) {
+      throw new Error("QUOTAS table fetch failed: " + e.message);
+    }
+
+    let cmRows;
+    let cmViewUsed = CM_VIEW;
+    try {
+      cmRows = await listRows(hssAccess, "CM", CM_VIEW);
+    } catch (cmErr) {
+      try {
+        cmRows = await listRows(hssAccess, "CM", "");
+        cmViewUsed = "";
+        warnings.push({
+          type: "cm_view_fallback",
+          message:
+            "CM view \"" +
+            CM_VIEW +
+            "\" failed: " +
+            cmErr.message +
+            " Using all CM rows (no view filter)."
+        });
+      } catch (cmErr2) {
+        throw new Error(
+          "CM table failed with view: " +
+            cmErr.message +
+            " | without view: " +
+            cmErr2.message
+        );
+      }
+    }
 
     const quotas = {};
     for (const row of quotaRows) {
@@ -171,7 +208,6 @@ export default async function handler(req, res) {
     }
 
     const byClient = {};
-    const warnings = [];
     const unknownStatusCounts = {};
     let skippedNoClient = 0;
 
@@ -351,6 +387,7 @@ export default async function handler(req, res) {
       },
       debug: {
         cm_rows: cmRows.length,
+        cm_view: cmViewUsed || "(all rows)",
         quotas_loaded: Object.keys(quotas).length,
         clients: allClients.length
       },
