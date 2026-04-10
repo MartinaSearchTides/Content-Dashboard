@@ -17,9 +17,7 @@ In Vercel → Project Settings → Environment Variables, add:
 
 | Name | Value |
 |------|-------|
-| `OM_API_TOKEN`  | `e04c9404877a98d87b5b7530667d7449828eab2d` |
-| `LBT_API_TOKEN` | `ec482699cb614535b22e3df5acfdcb372b82f632` |
-| `CMS_API_TOKEN` | `7450049f789260e64a393ad91bbb33184be0d37e` |
+|
 
 After adding variables, click **Redeploy**.
 
