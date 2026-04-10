@@ -343,13 +343,13 @@ function renderInternal(clients) {
 }
 
 function renderCompany(clients) {
-  var storedQ=getQ(), storedA=getA();
+  var storedA=getA();
   var totInt=0,totExt=0,totJourn=0,totQ=0;
   clients.forEach(function(c) {
     totInt   += n(c["Published"]);
     totExt   += LBT_CLIENTS.indexOf(c["client"])>-1 ? n(c["ext_published"]) : 0;
     totJourn += c["client"]===PRESS_CLIENT ? n(c["journalists"]) : 0;
-    totQ     += n(storedQ[c["client"]]);
+    totQ     += n(c["company_quota"]);
   });
   var total=totInt+totExt+totJourn, op=pct(total,totQ), pc=pcClass(op);
 
@@ -358,7 +358,7 @@ function renderCompany(clients) {
     '<div class="sum-tile"><div class="sum-label">External LBT</div><div class="sum-value sv-purple">'+fmt(totExt)+'</div></div>'+
     '<div class="sum-tile"><div class="sum-label">Journalists</div><div class="sum-value sv-amber">'+fmt(totJourn)+'</div></div>'+
     '<div class="sum-tile"><div class="sum-label">Company quota</div><div class="sum-value sv-neutral">'+fmt(totQ)+
-      ' <span style="font-size:11px;color:var(--purple);cursor:pointer;font-family:var(--fm)" onclick="openModal()">edit</span></div></div>'+
+      '</div></div>'+
     '<div class="sum-tile"><div class="sum-label">Quota attainment</div><div class="sum-value '+sumClass(pc)+'">'+op+'%</div></div>';
 
   var grid=document.getElementById("grid-company");
@@ -372,7 +372,7 @@ function renderCompany(clients) {
     var intPub=n(c["Published"]);
     var extPub=hasExt?n(c["ext_published"]):0;
     var journVal=hasJourn?n(c["journalists"]):0;
-    var cq=n(storedQ[name]);
+    var cq=n(c["company_quota"]);
     var asfee=n(storedA[name]);
     var total=intPub+extPub+journVal;
     var p=pct(total,cq), pc=pcClass(p);
@@ -413,7 +413,7 @@ function renderCompany(clients) {
     var card=document.createElement("div"); card.className="company-card";
     card.innerHTML=
       '<div class="card-header"><div class="client-name">'+esc(name)+'</div>'+
-        '<div class="quota-pill">quota <strong>'+fmt(cq)+'</strong><button class="edit-quota-btn" onclick="openModal()">edit</button></div></div>'+
+        '<div class="quota-pill">quota <strong>'+fmt(cq)+'</strong></div></div>'+
       '<div class="progress-wrap">'+
         '<div class="progress-labels"><span>Total published vs company quota</span><span class="progress-pct ppc-'+pc+'">'+p+'% - '+fmt(total)+' / '+fmt(cq)+'</span></div>'+
         '<div class="progress-track"><div class="progress-fill pf-'+pc+'" style="width:'+Math.min(p,100)+'%"></div></div></div>'+
