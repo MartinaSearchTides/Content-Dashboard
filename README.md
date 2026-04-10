@@ -23,7 +23,7 @@ After changing variables, redeploy.
 - **CM** — only rows whose **DATE REQUESTED** (`YYYY-MM-DD`) falls in the **current calendar month** are included. LV is the sum of **Link Value** only (not other LV columns). **Records** mode uses row counts per bucket. Grouping by client (`CLIENT*` / `Client` variants) and status (`C STATUS`).
 - **QUOTAS** — monthly LV quota per client (`LV Quota` / emoji-prefixed variants), current calendar month and year.
 
-Statuses are validated against a fixed list; unknown values appear in the UI under “Other / unknown” and trigger API warnings.
+Dashboard buckets: **Published** (includes CM statuses Published, Ready for Delivery, Delivered to BO), **Pending**, **Content Requested** (total of the literal Content Requested status plus Assigned, Revisions Required, Revisions Complete, Ready for Edits, Editing, For Charlotte's Review). Unknown C STATUS values roll into **Other / unknown** with API warnings.
 
 ## Notes
 

@@ -72,7 +72,7 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 .unit-toggle button { font-family: var(--fm); font-size: 11px; padding: 8px 16px; border: none; background: var(--surface2); color: var(--muted2); cursor: pointer; transition: background 0.15s, color 0.15s; }
 .unit-toggle button.active { background: var(--purple-dim); color: var(--purple); font-weight: 600; }
 
-.summary-bar { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 1.75rem; }
+.summary-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 1.75rem; }
 .sum-tile { background: var(--surface); padding: 1.1rem 1.4rem; transition: background 0.15s; }
 .sum-tile:hover { background: var(--surface2); }
 .sum-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-family: var(--fm); }
@@ -85,37 +85,24 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 .sv-over { color: var(--red); }
 .sv-amber { color: var(--amber); }
 
-.charts-row { display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; margin-bottom: 1.75rem; align-items: start; }
-@media (max-width: 900px) { .charts-row { grid-template-columns: 1fr; } }
+.pipeline-indicator { margin-top: 6px; font-size: 10px; font-family: var(--fm); color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.pip-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pip-ok { background: var(--green); }
+.pip-warn { background: var(--orange); }
 
-.chart-panel { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; padding: 1.25rem 1.5rem; }
-.chart-title { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; font-family: var(--fm); color: var(--muted); margin-bottom: 1rem; }
-.pie-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.pie-legend { font-size: 11px; font-family: var(--fm); width: 100%; }
-.pie-legend-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
-.pie-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; margin-right: 6px; }
-.pie-dot.done { background: var(--green); }
-.pie-dot.progress { background: var(--orange); }
-.pie-dot.queue { background: var(--bar-queue); }
-
-.stacked-list { display: flex; flex-direction: column; gap: 10px; }
-.stacked-row { display: grid; grid-template-columns: 120px 1fr 52px; gap: 10px; align-items: center; font-size: 11px; font-family: var(--fm); }
-.stacked-name { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stacked-bar { display: flex; height: 22px; border-radius: 4px; overflow: hidden; background: var(--surface3); }
-.stacked-seg { height: 100%; transition: width 0.5s cubic-bezier(0.16,1,0.3,1); min-width: 0; }
-.stacked-seg.done { background: var(--green); }
-.stacked-seg.progress { background: var(--orange); }
-.stacked-seg.queue { background: var(--bar-queue); }
-.stacked-total { text-align: right; color: var(--muted2); }
-
-.data-table-wrap { background: var(--surface); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; margin-bottom: 1.75rem; }
-.data-table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--fm); }
-.data-table th { text-align: left; padding: 12px 14px; background: var(--surface2); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
-.data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
-.data-table tr:last-child td { border-bottom: none; }
-.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.diff-neg { color: var(--red); }
-.diff-pos { color: var(--green); }
+.funnels { display: grid; grid-template-columns: 3fr 2fr; flex: 1; }
+.funnel-col { padding: 18px 22px 22px; }
+.funnel-col:first-child { border-right: 1px solid var(--border); }
+.funnel-heading { font-size: 9px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; font-family: var(--fm); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.fh-pipe { color: var(--teal); }
+.fh-cr { color: var(--purple); }
+.funnel-total { font-family: var(--fd); font-size: 42px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+.ft-pipe { color: var(--teal); }
+.ft-cr { color: var(--purple); }
+.s-name-pub { color: var(--teal); font-weight: 500; }
+.s-val-pub { color: var(--teal); font-weight: 600; font-size: 15px; }
+.cr-block { margin-top: 4px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.cr-block .status-row { margin-bottom: 4px; }
 
 .clients-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; }
 .client-card { background: var(--surface); display: flex; flex-direction: column; }
@@ -140,22 +127,18 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 .pf-orange { background: var(--orange); }
 .pf-green { background: var(--green); }
 
-.funnel-col { padding: 18px 22px 22px; }
-.funnel-heading { font-size: 9px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; font-family: var(--fm); margin-bottom: 12px; color: var(--teal); display: flex; align-items: center; gap: 6px; }
-.funnel-total { font-family: var(--fd); font-size: 36px; font-weight: 700; letter-spacing: -1px; line-height: 1; margin-bottom: 12px; font-variant-numeric: tabular-nums; color: var(--teal); }
 .status-list { display: flex; flex-direction: column; gap: 6px; }
 .status-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .s-name { font-size: 11px; font-family: var(--fm); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .s-val { font-size: 12px; font-family: var(--fm); font-weight: 500; color: var(--text); white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; }
 
-.section-title { font-family: var(--fd); font-size: 18px; font-weight: 700; margin: 2rem 0 1rem; letter-spacing: -0.02em; }
-.section-title:first-of-type { margin-top: 0; }
+.section-title { font-family: var(--fd); font-size: 18px; font-weight: 700; margin: 1.5rem 0 1rem; letter-spacing: -0.02em; }
 
 @media (max-width: 900px) {
   .clients-grid { grid-template-columns: 1fr; }
   .summary-bar { grid-template-columns: repeat(2, 1fr); }
-  .stacked-row { grid-template-columns: 1fr; }
- .stacked-total { text-align: left; }
+  .funnels { grid-template-columns: 1fr; }
+  .funnel-col:first-child { border-right: none; border-bottom: 1px solid var(--border); }
 }
 </style>
 </head>
@@ -194,38 +177,7 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 
   <div class="summary-bar" id="summary-bar"></div>
 
-  <h2 class="section-title">Overview</h2>
-  <div class="charts-row">
-    <div class="chart-panel">
-      <div class="chart-title">Global status mix</div>
-      <div class="pie-wrap" id="pie-container"></div>
-    </div>
-    <div class="chart-panel">
-      <div class="chart-title">By project (stacked)</div>
-      <div class="stacked-list" id="stacked-bars"></div>
-    </div>
-  </div>
-
-  <h2 class="section-title">Capacity signals</h2>
-  <div class="summary-bar" id="bottleneck-bar" style="grid-template-columns: repeat(2, 1fr);"></div>
-
-  <h2 class="section-title">Data table</h2>
-  <div class="data-table-wrap">
-    <table class="data-table" id="data-table">
-      <thead>
-        <tr>
-          <th>Project</th>
-          <th class="num">BTF target (LV)</th>
-          <th class="num">Current LV</th>
-          <th class="num">Difference</th>
-          <th class="num">Records</th>
-        </tr>
-      </thead>
-      <tbody id="data-table-body"></tbody>
-    </table>
-  </div>
-
-  <h2 class="section-title">Project detail</h2>
+  <h2 class="section-title">By project</h2>
   <div class="clients-grid" id="clients-grid"></div>
 </div>
 
@@ -290,244 +242,127 @@ function renderWarnings(warnings) {
 
 function renderSummary() {
   var g = globalJson.global;
-  var cat = g.by_category;
-  var done = pickMetric(cat.done);
-  var prog = pickMetric(cat.in_progress);
-  var que = pickMetric(cat.queue);
+  var pub = pickMetric(g.published);
+  var pen = pickMetric(g.pending);
+  var cr = pickMetric(g.content_requested);
   var att = g.quota_attainment_pct;
   var attPc = pcClass(att);
-  var totalUnit = unit === "lv" ? g.total_lv : g.total_records;
+  var qFmt = (Math.round(g.total_quota * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
   document.getElementById("summary-bar").innerHTML =
-    '<div class="sum-tile"><div class="sum-label">Total (' +
-    (unit === "lv" ? "LV" : "Records") +
-    ')</div><div class="sum-value sv-teal">' +
-    fmtMetric(totalUnit) +
+    '<div class="sum-tile"><div class="sum-label">Published</div><div class="sum-value sv-teal">' +
+    fmtMetric(pub) +
     '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Total BTF target (LV)</div><div class="sum-value sv-neutral">' +
-    (Math.round(g.total_quota * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+    '<div class="sum-tile"><div class="sum-label">Pending</div><div class="sum-value sv-purple">' +
+    fmtMetric(pen) +
     '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Quota attainment (LV)</div><div class="sum-value ' +
+    '<div class="sum-tile"><div class="sum-label">Content Requested (total)</div><div class="sum-value sv-amber">' +
+    fmtMetric(cr) +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">BTF target (LV)</div><div class="sum-value sv-neutral">' +
+    qFmt +
+    '</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Quota attainment (Published)</div><div class="sum-value ' +
     sumClass(attPc) +
     '">' +
     att +
-    '%</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Done</div><div class="sum-value sv-ok">' +
-    fmtMetric(done) +
-    '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">In progress</div><div class="sum-value sv-warn">' +
-    fmtMetric(prog) +
-    '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Queue</div><div class="sum-value sv-neutral">' +
-    fmtMetric(que) +
-    "</div></div>";
-}
-
-function renderPie() {
-  var cat = globalJson.global.by_category;
-  var d = pickMetric(cat.done);
-  var i = pickMetric(cat.in_progress);
-  var q = pickMetric(cat.queue);
-  var t = d + i + q;
-  var r = 72;
-  var cx = 80;
-  var cy = 80;
-
-  function arc(a0, a1) {
-    var x0 = cx + r * Math.cos(a0);
-    var y0 = cy + r * Math.sin(a0);
-    var x1 = cx + r * Math.cos(a1);
-    var y1 = cy + r * Math.sin(a1);
-    var large = a1 - a0 > Math.PI ? 1 : 0;
-    return "M " + cx + " " + cy + " L " + x0 + " " + y0 + " A " + r + " " + r + " 0 " + large + " 1 " + x1 + " " + y1 + " Z";
-  }
-
-  var parts = [];
-  if (t <= 0) {
-    parts.push(
-      '<svg width="160" height="160" viewBox="0 0 160 160"><circle cx="80" cy="80" r="72" fill="var(--surface3)"/></svg>'
-    );
-  } else {
-    var a0 = -Math.PI / 2;
-    var ad = (d / t) * 2 * Math.PI;
-    var ai = (i / t) * 2 * Math.PI;
-    var aq = (q / t) * 2 * Math.PI;
-    var a1 = a0 + ad;
-    var a2 = a1 + ai;
-    var a3 = a2 + aq;
-    var paths = "";
-    if (d > 0) paths += '<path d="' + arc(a0, a1) + '" fill="var(--green)"/>';
-    if (i > 0) paths += '<path d="' + arc(a1, a2) + '" fill="var(--orange)"/>';
-    if (q > 0) paths += '<path d="' + arc(a2, a3) + '" fill="var(--bar-queue)"/>';
-    parts.push('<svg width="160" height="160" viewBox="0 0 160 160">' + paths + "</svg>");
-  }
-
-  var pd = t > 0 ? pct(d, t) : 0;
-  var pi = t > 0 ? pct(i, t) : 0;
-  var pq = t > 0 ? pct(q, t) : 0;
-
-  parts.push(
-    '<div class="pie-legend">' +
-      '<div class="pie-legend-row"><span><span class="pie-dot done"></span>Done</span><span>' +
-      pd +
-      "% (" +
-      fmtMetric(d) +
-      ")</span></div>" +
-      '<div class="pie-legend-row"><span><span class="pie-dot progress"></span>In progress</span><span>' +
-      pi +
-      "% (" +
-      fmtMetric(i) +
-      ")</span></div>" +
-      '<div class="pie-legend-row"><span><span class="pie-dot queue"></span>Queue</span><span>' +
-      pq +
-      "% (" +
-      fmtMetric(q) +
-      ")</span></div>" +
-      "</div>"
-  );
-
-  document.getElementById("pie-container").innerHTML = parts.join("");
-}
-
-function renderStacked() {
-  var clients = globalJson.clients;
-  var html = "";
-  clients.forEach(function (c) {
-    var cat = c.by_category;
-    var d = pickMetric(cat.done);
-    var i = pickMetric(cat.in_progress);
-    var q = pickMetric(cat.queue);
-    var t = d + i + q;
-    var wd = t > 0 ? (d / t) * 100 : 0;
-    var wi = t > 0 ? (i / t) * 100 : 0;
-    var wq = t > 0 ? (q / t) * 100 : 0;
-    html +=
-      '<div class="stacked-row">' +
-      '<span class="stacked-name">' +
-      esc(c.client) +
-      '</span><div class="stacked-bar">' +
-      (d > 0 ? '<span class="stacked-seg done" style="width:' + wd + '%"></span>' : "") +
-      (i > 0 ? '<span class="stacked-seg progress" style="width:' + wi + '%"></span>' : "") +
-      (q > 0 ? '<span class="stacked-seg queue" style="width:' + wq + '%"></span>' : "") +
-      (t === 0 ? '<span class="stacked-seg queue" style="width:100%"></span>' : "") +
-      '</div><span class="stacked-total">' +
-      fmtMetric(t) +
-      "</span></div>";
-  });
-  document.getElementById("stacked-bars").innerHTML = html || "<p class=\"muted\">No data</p>";
-}
-
-function renderBottleneck() {
-  var b = globalJson.global.bottleneck;
-  var r = b.ready_for_edits;
-  var cr = b.content_requested;
-  document.getElementById("bottleneck-bar").innerHTML =
-    '<div class="sum-tile"><div class="sum-label">Ready for Edits</div><div class="sum-value sv-warn">' +
-    fmtMetric(pickMetric(r)) +
-    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">LV: ' +
-    fmtMetric(r.lv) +
-    " · Records: " +
-    Math.round(r.records) +
-    '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Content Requested (queue)</div><div class="sum-value sv-amber">' +
-    fmtMetric(pickMetric(cr)) +
-    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">LV: ' +
-    fmtMetric(cr.lv) +
-    " · Records: " +
-    Math.round(cr.records) +
-    "</div></div>";
-}
-
-function renderTable() {
-  var tbody = document.getElementById("data-table-body");
-  var rows = "";
-  globalJson.clients.forEach(function (c) {
-    var quota = n(c.quota);
-    var curLv = n(c.total_lv);
-    var diff = curLv - quota;
-    var rec = n(c.total_records);
-    var diffCls = diff < 0 ? "diff-neg" : diff > 0 ? "diff-pos" : "";
-    rows +=
-      "<tr><td>" +
-      esc(c.client) +
-      '</td><td class="num">' +
-      fmtMetric(quota) +
-      '</td><td class="num">' +
-      fmtMetric(curLv) +
-      '</td><td class="num ' +
-      diffCls +
-      '">' +
-      (diff > 0 ? "+" : "") +
-      fmtMetric(diff) +
-      '</td><td class="num">' +
-      Math.round(rec).toLocaleString("en-US") +
-      "</td></tr>";
-  });
-  tbody.innerHTML = rows;
+    "%</div></div>";
 }
 
 function renderCards() {
   var grid = document.getElementById("clients-grid");
   grid.innerHTML = "";
-  var order = globalJson.status_order || [];
+  var dOrder = globalJson.content_requested_detail_order || [];
 
   globalJson.clients.forEach(function (c) {
     var quota = n(c.quota);
-    var totalLv = n(c.total_lv);
-    var p = pct(totalLv, quota);
-    var pc = pcClass(p);
+    var pub = pickMetric(c.published);
+    var pen = pickMetric(c.pending);
+    var cr = pickMetric(c.content_requested);
+    var pipeline = pub + pen + cr;
+    var pPub = pct(pub, quota);
+    var pc = pcClass(pPub);
+    var pipPct = pct(pipeline, quota);
+    var pipOk = pipeline >= quota;
 
-    var statusRows = order      .map(function (s) {
-        var cell = c.by_status[s];
-        var v = unit === "lv" ? n(cell.lv) : n(cell.records);
-        return (
-          '<div class="status-row"><span class="s-name">' +
-          esc(s) +
-          '</span><span class="s-val">' +
-          fmtMetric(v) +
-          "</span></div>"
-        );
-      })
-      .join("");
+    var leftRows =
+      '<div class="status-row"><span class="s-name s-name-pub">Published</span><span class="s-val s-val-pub">' +
+      fmtMetric(pub) +
+      "</span></div>" +
+      '<div class="status-row"><span class="s-name">Pending</span><span class="s-val">' +
+      fmtMetric(pen) +
+      "</span></div>" +
+      '<div class="status-row"><span class="s-name">Content Requested</span><span class="s-val">' +
+      fmtMetric(cr) +
+      "</span></div>";
 
-    if (c.by_status_other) {
-      var o = c.by_status_other;
-      statusRows +=
+    if (pickMetric(c.other) > 0) {
+      leftRows +=
         '<div class="status-row"><span class="s-name" style="color:var(--red)">Other / unknown</span><span class="s-val">' +
-        fmtMetric(unit === "lv" ? o.lv : o.records) +
+        fmtMetric(c.other) +
         "</span></div>";
     }
+
+    var crLit = pickMetric(c.cr_literal);
+    var rightDetail =
+      '<div class="status-row"><span class="s-name">Content Requested</span><span class="s-val">' +
+      fmtMetric(crLit) +
+      "</span></div>";
+    dOrder.forEach(function (st) {
+      var cell = c.cr_detail[st] || { lv: 0, records: 0 };
+      rightDetail +=
+        '<div class="status-row"><span class="s-name">' +
+        esc(st) +
+        '</span><span class="s-val">' +
+        fmtMetric(pickMetric(cell)) +
+        "</span></div>";
+    });
 
     var card = document.createElement("div");
     card.className = "client-card";
     card.innerHTML =
       '<div class="card-header"><div class="client-name">' +
       esc(c.client) +
-      '</div><div class="quota-pill">BTF <strong>' +
+      '</div><div class="quota-pill">quota <strong>' +
       fmtMetric(quota) +
       "</strong> LV</div></div>" +
       '<div class="progress-wrap">' +
-      '<div class="progress-labels"><span>Total LV vs BTF target</span><span class="progress-pct ppc-' +
+      '<div class="progress-labels"><span>Published vs quota</span><span class="progress-pct ppc-' +
       pc +
       '">' +
-      p +
-      "% · " +
-      fmtMetric(totalLv) +
-      " / " +
-      fmtMetric(quota) +
-      "</span></div>" +
+      pPub +
+      "%</span></div>" +
       '<div class="progress-track"><div class="progress-fill pf-' +
       pc +
       '" style="width:' +
-      Math.min(p, 100) +
-      '%"></div></div></div>' +
-      '<div class="funnel-col"><div class="funnel-heading"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>By status</div>' +
-      '<div class="funnel-total">' +
-      fmtMetric(unit === "lv" ? totalLv : n(c.total_records)) +
+      Math.min(pPub, 100) +
+      '%"></div></div>' +
+      '<div class="pipeline-indicator"><div class="pip-dot ' +
+      (pipOk ? "pip-ok" : "pip-warn") +
+      '"></div>Pipeline ' +
+      fmtMetric(pipeline) +
+      " (" +
+      pipPct +
+      "% of quota)" +
+      (pipOk ? " - covered" : "") +
+      "</div></div>" +
+      '<div class="funnels">' +
+      '<div class="funnel-col">' +
+      '<div class="funnel-heading fh-pipe"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>Pipeline</div>' +
+      '<div class="funnel-total ft-pipe">' +
+      fmtMetric(pipeline) +
       "</div>" +
       '<div class="status-list">' +
-      statusRows +
-      "</div></div>";
+      leftRows +
+      "</div></div>" +
+      '<div class="funnel-col">' +
+      '<div class="funnel-heading fh-cr"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--purple)"/></svg>Under Content Requested</div>' +
+      '<div class="funnel-total ft-cr">' +
+      fmtMetric(cr) +
+      "</div>" +
+      '<div class="status-list cr-block">' +
+      rightDetail +
+      "</div></div></div>";
 
     grid.appendChild(card);
   });
@@ -536,10 +371,6 @@ function renderCards() {
 function renderAll() {
   renderWarnings(globalJson.warnings);
   renderSummary();
-  renderPie();
-  renderStacked();
-  renderBottleneck();
-  renderTable();
   renderCards();
 }
 

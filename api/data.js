@@ -3,12 +3,16 @@ const SERVER = "https://seatable.searchtides.com";
 /** SeaTable diamond emoji prefix (same pattern as QUOTAS Client column). */
 const D = "\u{1F539}";
 
-/** Canonical CM workflow statuses (exact labels). */
-const CM_STATUSES = [
-  "Content Requested",
+/** Published: CM rows counted like linkbuilding "Published" + delivered states. */
+const STATUS_PUBLISHED = new Set(["Published", "Ready for Delivery", "Delivered to BO"]);
+
+const STATUS_PENDING = new Set(["Pending"]);
+
+/** Literal queue row + pipeline under Content Requested (detail excludes the umbrella label in API order). */
+const CR_LITERAL = "Content Requested";
+
+const CONTENT_REQUESTED_DETAIL = [
   "Assigned",
-  "Ready for Delivery",
-  "Delivered to BO",
   "Revisions Required",
   "Revisions Complete",
   "Ready for Edits",
@@ -16,20 +20,12 @@ const CM_STATUSES = [
   "For Charlotte's Review"
 ];
 
-const STATUS_SET = new Set(CM_STATUSES);
-
-/** UI grouping: done (green), in_progress (amber), queue (neutral). */
-const CATEGORY_FOR_STATUS = {
-  "Content Requested": "queue",
-  Assigned: "in_progress",
-  "Ready for Delivery": "done",
-  "Delivered to BO": "done",
-  "Revisions Required": "in_progress",
-  "Revisions Complete": "in_progress",
-  "Ready for Edits": "in_progress",
-  Editing: "in_progress",
-  "For Charlotte's Review": "in_progress"
-};
+const ALL_KNOWN_STATUS = new Set([
+  ...STATUS_PUBLISHED,
+  ...STATUS_PENDING,
+  CR_LITERAL,
+  ...CONTENT_REQUESTED_DETAIL
+]);
 
 const CM_VIEW = "Default View_for dashboard";
 
@@ -185,22 +181,72 @@ function currentMonthNum() {
   return new Date().getMonth() + 1;
 }
 
-function emptyStatusMap() {
-  const o = {};
-  for (const s of CM_STATUSES) o[s] = { lv: 0, records: 0 };
-  return o;
+function metricZero() {
+  return { lv: 0, records: 0 };
 }
 
-function emptyCategoryMap() {
+function addMetric(m, lv) {
+  m.lv = roundLv(m.lv + lv);
+  m.records += 1;
+}
+
+function emptyClientBuckets() {
+  const cr_detail = {};
+  for (const s of CONTENT_REQUESTED_DETAIL) cr_detail[s] = metricZero();
   return {
-    done: { lv: 0, records: 0 },
-    in_progress: { lv: 0, records: 0 },
-    queue: { lv: 0, records: 0 }
+    published: metricZero(),
+    pending: metricZero(),
+    content_requested: metricZero(),
+    cr_literal: metricZero(),
+    cr_detail,
+    other: metricZero()
   };
 }
 
 function roundLv(x) {
   return Math.round(x * 100) / 100;
+}
+
+function addRowToBuckets(b, status, lv) {
+  if (STATUS_PUBLISHED.has(status)) {
+    addMetric(b.published, lv);
+    return;
+  }
+  if (STATUS_PENDING.has(status)) {
+    addMetric(b.pending, lv);
+    return;
+  }
+  if (status === CR_LITERAL) {
+    addMetric(b.cr_literal, lv);
+    addMetric(b.content_requested, lv);
+    return;
+  }
+  if (CONTENT_REQUESTED_DETAIL.includes(status)) {
+    addMetric(b.cr_detail[status], lv);
+    addMetric(b.content_requested, lv);
+    return;
+  }
+  addMetric(b.other, lv);
+}
+
+function mergeMetric(into, from) {
+  into.lv = roundLv(into.lv + from.lv);
+  into.records += from.records;
+}
+
+function mergeBuckets(into, from) {
+  mergeMetric(into.published, from.published);
+  mergeMetric(into.pending, from.pending);
+  mergeMetric(into.content_requested, from.content_requested);
+  mergeMetric(into.cr_literal, from.cr_literal);
+  mergeMetric(into.other, from.other);
+  for (const s of CONTENT_REQUESTED_DETAIL) {
+    mergeMetric(into.cr_detail[s], from.cr_detail[s]);
+  }
+}
+
+function sumClassifiedLv(b) {
+  return roundLv(b.published.lv + b.pending.lv + b.content_requested.lv + b.other.lv);
 }
 
 export default async function handler(req, res) {
@@ -296,40 +342,14 @@ export default async function handler(req, res) {
       cmLvSumCheck += lv;
 
       if (!byClient[client]) {
-        byClient[client] = {
-          by_status: emptyStatusMap(),
-          by_category: emptyCategoryMap(),
-          total_lv: 0,
-          total_records: 0,
-          done_lv: 0
-        };
+        byClient[client] = emptyClientBuckets();
       }
 
-      const st = byClient[client].by_status;
-      const cat = byClient[client].by_category;
-
-      if (!STATUS_SET.has(status)) {
-        unknownStatusCounts[status || "(empty)"] = (unknownStatusCounts[status || "(empty)"] || 0) + 1;
-        if (!st._other) st._other = { lv: 0, records: 0 };
-        st._other.lv = roundLv(st._other.lv + lv);
-        st._other.records += 1;
-        byClient[client].total_lv = roundLv(byClient[client].total_lv + lv);
-        byClient[client].total_records += 1;
-        continue;
+      if (status && !ALL_KNOWN_STATUS.has(status)) {
+        unknownStatusCounts[status] = (unknownStatusCounts[status] || 0) + 1;
       }
 
-      st[status].lv = roundLv(st[status].lv + lv);
-      st[status].records += 1;
-
-      const ckey = CATEGORY_FOR_STATUS[status] || "in_progress";
-      cat[ckey].lv = roundLv(cat[ckey].lv + lv);
-      cat[ckey].records += 1;
-
-      byClient[client].total_lv = roundLv(byClient[client].total_lv + lv);
-      byClient[client].total_records += 1;
-      if (ckey === "done") {
-        byClient[client].done_lv = roundLv(byClient[client].done_lv + lv);
-      }
+      addRowToBuckets(byClient[client], status, lv);
     }
 
     if (skippedNoClient > 0) {
@@ -360,58 +380,30 @@ export default async function handler(req, res) {
 
     const allClients = [...new Set([...Object.keys(byClient), ...Object.keys(quotas)])].sort();
 
-    const globalByStatus = emptyStatusMap();
-    const globalByCategory = emptyCategoryMap();
-    let globalTotalLv = 0;
+    const globalBuckets = emptyClientBuckets();
     let globalTotalRecords = 0;
 
     const clients = allClients.map(name => {
-      const b = byClient[name] || {
-        by_status: emptyStatusMap(),
-        by_category: emptyCategoryMap(),
-        total_lv: 0,
-        total_records: 0,
-        done_lv: 0
-      };
-
-      for (const s of CM_STATUSES) {
-        globalByStatus[s].lv = roundLv(globalByStatus[s].lv + b.by_status[s].lv);
-        globalByStatus[s].records += b.by_status[s].records;
-      }
-      for (const ck of ["done", "in_progress", "queue"]) {
-        globalByCategory[ck].lv = roundLv(globalByCategory[ck].lv + b.by_category[ck].lv);
-        globalByCategory[ck].records += b.by_category[ck].records;
-      }
-      globalTotalLv = roundLv(globalTotalLv + b.total_lv);
-      globalTotalRecords += b.total_records;
+      const b = byClient[name] || emptyClientBuckets();
+      mergeBuckets(globalBuckets, b);
+      globalTotalRecords += b.published.records + b.pending.records + b.content_requested.records + b.other.records;
 
       const quota = quotas[name] || 0;
       const rowOut = {
         client: name,
         quota,
-        total_lv: b.total_lv,
-        total_records: b.total_records,
-        done_lv: b.done_lv,
-        by_status: b.by_status,
-        by_category: b.by_category
+        published: b.published,
+        pending: b.pending,
+        content_requested: b.content_requested,
+        cr_literal: b.cr_literal,
+        cr_detail: b.cr_detail,
+        other: b.other
       };
-
-      if (b.by_status._other) {
-        rowOut.by_status_other = b.by_status._other;
-      }
 
       return rowOut;
     });
 
-    let recomputedLv = 0;
-    for (const s of CM_STATUSES) recomputedLv = roundLv(recomputedLv + globalByStatus[s].lv);
-    if (Object.keys(unknownStatusCounts).length) {
-      for (const name of allClients) {
-        const o = byClient[name]?.by_status?._other;
-        if (o) recomputedLv = roundLv(recomputedLv + o.lv);
-      }
-    }
-
+    const recomputedLv = sumClassifiedLv(globalBuckets);
     if (Math.abs(recomputedLv - cmLvSumCheck) > 0.01) {
       warnings.push({
         type: "lv_sum_mismatch",
@@ -424,47 +416,26 @@ export default async function handler(req, res) {
       });
     }
 
-    const bottleneck = {
-      ready_for_edits: { lv: 0, records: 0 },
-      content_requested: { lv: 0, records: 0 }
-    };
-    for (const c of clients) {
-      const st = c.by_status;
-      bottleneck.ready_for_edits.lv = roundLv(bottleneck.ready_for_edits.lv + (st["Ready for Edits"]?.lv || 0));
-      bottleneck.ready_for_edits.records += st["Ready for Edits"]?.records || 0;
-      bottleneck.content_requested.lv = roundLv(bottleneck.content_requested.lv + (st["Content Requested"]?.lv || 0));
-      bottleneck.content_requested.records += st["Content Requested"]?.records || 0;
-    }
-
     const totQuota = allClients.reduce((s, n) => s + (quotas[n] || 0), 0);
-    const quotaAttainmentPct = totQuota > 0 ? Math.round((globalTotalLv / totQuota) * 100) : 0;
+    const quotaAttainmentPct =
+      totQuota > 0 ? Math.round((globalBuckets.published.lv / totQuota) * 100) : 0;
 
     return res.status(200).json({
       ok: true,
       generated: new Date().toISOString(),
       prod_month: PM,
       warnings,
-      status_order: CM_STATUSES,
-      categories: {
-        done: ["Ready for Delivery", "Delivered to BO"],
-        in_progress: [
-          "Assigned",
-          "Revisions Required",
-          "Revisions Complete",
-          "Ready for Edits",
-          "Editing",
-          "For Charlotte's Review"
-        ],
-        queue: ["Content Requested"]
-      },
+      content_requested_detail_order: CONTENT_REQUESTED_DETAIL,
       global: {
-        total_lv: roundLv(globalTotalLv),
-        total_records: globalTotalRecords,
+        published: globalBuckets.published,
+        pending: globalBuckets.pending,
+        content_requested: globalBuckets.content_requested,
+        cr_literal: globalBuckets.cr_literal,
+        cr_detail: globalBuckets.cr_detail,
+        other: globalBuckets.other,
         total_quota: roundLv(totQuota),
         quota_attainment_pct: quotaAttainmentPct,
-        by_status: globalByStatus,
-        by_category: globalByCategory,
-        bottleneck
+        total_records: globalTotalRecords
       },
       debug: {
         cm_rows_fetched: cmRows.length,
