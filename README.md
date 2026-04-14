@@ -24,7 +24,7 @@ After changing variables, redeploy.
 
 ### STATUS 1 (BTF)
 
-Only these five values count as **in BTF**; everything else is **outside BTF** (for example negotiation):
+Only these five values count as **in BTF**; other STATUS 1 values exist in OM but are **not shown** on the dashboard (not tracked as pipeline noise):
 
 - Published  
 - Pending  
@@ -43,7 +43,7 @@ When **STATUS 1** is **Content Requested**, the dashboard breaks rows down by **
 - Content Requested (literal CM label)  
 - Ready for Edits, Editing, Assigned, Revisions Required, Revisions Complete, For Charlotte’s Review (normalized from `For Charlotte's review` if needed)  
 
-Unknown CM Status values roll into **Other CM Status** and trigger API warnings.
+Unknown CM Status values roll into **Other CM Status** and trigger a **data validation** warning listing **row counts per client** for each unknown label.
 
 ### LV (Lead Value)
 
@@ -52,6 +52,7 @@ For **FanDuel**, **FanDuel Casino**, **FanDuel Racing**, **CreditNinja**, and **
 ### QUOTAS
 
 - Monthly LV quota per client from **QUOTAS** (`LV Quota` and emoji-prefixed variants), matched to the **current calendar month** and year.
+- **Quota attainment** (global % and per-card bar) compares **Published LV** to quota only — 100 % means published volume meets the quota, not Pending or Ready for Delivery.
 
 ## Notes
 

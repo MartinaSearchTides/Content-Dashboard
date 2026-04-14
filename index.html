@@ -267,7 +267,7 @@ function renderSummary() {
     '<div class="sum-tile"><div class="sum-label">BTF target (quota LV)</div><div class="sum-value sv-neutral">' +
     qFmt +
     '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Quota attainment (produced)</div><div class="sum-value ' +
+    '<div class="sum-tile"><div class="sum-label">Quota attainment (Published)</div><div class="sum-value ' +
     sumClass(attPc) +
     '">' +
     att +
@@ -286,10 +286,9 @@ function renderCards() {
     var rfd = pickMetric(c.ready_for_delivery);
     var cr = pickMetric(c.content_requested);
     var rev = pickMetric(c.revisions_requested);
-    var produced = pickMetric(c.produced);
     var btf = pickMetric(c.btf_total);
-    var pProd = pct(produced, quota);
-    var pc = pcClass(pProd);
+    var pPub = pct(pub, quota);
+    var pc = pcClass(pPub);
     var pipPct = pct(btf, quota);
     var pipOk = btf >= quota;
 
@@ -310,13 +309,6 @@ function renderCards() {
       fmtMetric(rev) +
       "</span></div>";
 
-    if (pickMetric(c.outside_btf) > 0) {
-      leftRows +=
-        '<div class="status-row"><span class="s-name" style="color:var(--red)">Outside BTF (STATUS 1)</span><span class="s-val">' +
-        fmtMetric(c.outside_btf) +
-        "</span></div>";
-    }
-
     var cmLit = pickMetric(c.cm_cr_literal);
     var rightDetail =
       '<div class="status-row"><span class="s-name">CM: Content Requested</span><span class="s-val">' +
@@ -335,7 +327,7 @@ function renderCards() {
     if (pickMetric(c.cm_other) > 0) {
       rightDetail +=
         '<div class="status-row"><span class="s-name" style="color:var(--amber)">Other CM Status</span><span class="s-val">' +
-        fmtMetric(c.cm_other) +
+        fmtMetric(pickMetric(c.cm_other)) +
         "</span></div>";
     }
 
@@ -359,15 +351,15 @@ function renderCards() {
       quotaPill +
       "</div>" +
       '<div class="progress-wrap">' +
-      '<div class="progress-labels"><span>Produced vs quota</span><span class="progress-pct ppc-' +
+      '<div class="progress-labels"><span>Published vs quota</span><span class="progress-pct ppc-' +
       pc +
       '">' +
-      pProd +
+      pPub +
       "%</span></div>" +
       '<div class="progress-track"><div class="progress-fill pf-' +
       pc +
       '" style="width:' +
-      Math.min(pProd, 100) +
+      Math.min(pPub, 100) +
       '%"></div></div>' +
       '<div class="pipeline-indicator"><div class="pip-dot ' +
       (pipOk ? "pip-ok" : "pip-warn") +

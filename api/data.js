@@ -338,7 +338,7 @@ export default async function handler(req, res) {
     }
 
     const byClient = {};
-    const unknownS1 = {};
+    /** cm label -> { total, byClient: { [clientName]: rowCount } } */
     const unknownCm = {};
     let skippedNoClient = 0;
     let lvSumCheck = 0;
@@ -364,11 +364,10 @@ export default async function handler(req, res) {
         byClient[client] = emptyClientBuckets();
       }
 
-      if (s1 && !BTF_STATUS.has(s1)) {
-        unknownS1[s1] = (unknownS1[s1] || 0) + 1;
-      }
       if (s1 === STATUS_CONTENT_REQUESTED && cm && !CM_STATUS_KNOWN.has(cm)) {
-        unknownCm[cm] = (unknownCm[cm] || 0) + 1;
+        if (!unknownCm[cm]) unknownCm[cm] = { total: 0, byClient: {} };
+        unknownCm[cm].total += 1;
+        unknownCm[cm].byClient[client] = (unknownCm[cm].byClient[client] || 0) + 1;
       }
 
       addOmRow(byClient[client], s1, cm, lv);
@@ -381,16 +380,21 @@ export default async function handler(req, res) {
       });
     }
 
-    for (const k of Object.keys(unknownS1)) {
-      warnings.push({
-        type: "unknown_status_1",
-        message: "STATUS 1 outside BTF (e.g. negotiation): " + JSON.stringify(k) + " (" + unknownS1[k] + " rows)."
-      });
-    }
-    for (const k of Object.keys(unknownCm)) {
+    for (const k of Object.keys(unknownCm).sort()) {
+      const u = unknownCm[k];
+      const clientParts = Object.keys(u.byClient)
+        .sort()
+        .map(cn => cn + " (" + u.byClient[cn] + ")");
       warnings.push({
         type: "unknown_cm_status",
-        message: "Unknown CM Status under Content Requested: " + JSON.stringify(k) + " (" + unknownCm[k] + " rows)."
+        message:
+          "Unknown CM Status under Content Requested: " +
+          JSON.stringify(k) +
+          " (" +
+          u.total +
+          " rows; " +
+          clientParts.join(", ") +
+          ")."
       });
     }
 
@@ -433,8 +437,7 @@ export default async function handler(req, res) {
         btf_total: { lv: btfTotal(b), records: btfRec },
         cm_cr_literal: b.cm_cr_literal,
         cm_detail: b.cm_detail,
-        cm_other: b.cm_other,
-        outside_btf: b.outside_btf
+        cm_other: b.cm_other
       };
     });
 
@@ -476,7 +479,6 @@ export default async function handler(req, res) {
         cm_cr_literal: globalBuckets.cm_cr_literal,
         cm_detail: globalBuckets.cm_detail,
         cm_other: globalBuckets.cm_other,
-        outside_btf: globalBuckets.outside_btf,
         btf_total: { lv: btfTotal(globalBuckets), records: gBtfRec },
         total_quota: roundLv(totQuota),
         quota_attainment_pct: quotaAttainmentPct,
