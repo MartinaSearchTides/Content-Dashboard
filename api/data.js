@@ -1,29 +1,50 @@
 const SERVER = "https://seatable.searchtides.com";
 
-/** SeaTable diamond emoji prefix (same pattern as QUOTAS Client column). */
 const D = "\u{1F539}";
 
-/** Link formula (linkbuilding): only these three drive Published / Pending / Content Requested totals. */
-const LF_PUBLISHED = "Published";
-const LF_PENDING = "Pending";
-const LF_CONTENT_REQUESTED = "Content Requested";
-const LINK_FORMULA_ALLOWED = new Set([LF_PUBLISHED, LF_PENDING, LF_CONTENT_REQUESTED]);
+const OM_VIEW = "Martina Dashboard View";
 
-/** C STATUS (content only): breakdown under Link formula = Content Requested. */
-const CR_LITERAL = "Content Requested";
+/** STATUS 1 (OM) — BTF only; negotiation etc. excluded. */
+const BTF_STATUS = new Set([
+  "Published",
+  "Pending",
+  "Content Requested",
+  "Ready for Delivery",
+  "Revisions Requested"
+]);
 
-const CONTENT_REQUESTED_DETAIL = [
+/** Produced = Published + Pending + Ready for Delivery (content done). */
+const PRODUCED_STATUS = new Set(["Published", "Pending", "Ready for Delivery"]);
+
+const STATUS_CONTENT_REQUESTED = "Content Requested";
+const STATUS_REVISIONS_REQUESTED = "Revisions Requested";
+
+/** CM Status breakdown when STATUS 1 = Content Requested. */
+const CM_STATUS_CONTENT_REQUESTED = "Content Requested";
+
+const CM_STATUS_DETAIL_ORDER = [
+  "Ready for Edits",
+  "Editing",
   "Assigned",
   "Revisions Required",
   "Revisions Complete",
-  "Ready for Edits",
-  "Editing",
   "For Charlotte's Review"
 ];
 
-const CSTATUS_UNDER_CR = new Set([CR_LITERAL, ...CONTENT_REQUESTED_DETAIL]);
+const CM_STATUS_KNOWN = new Set([
+  CM_STATUS_CONTENT_REQUESTED,
+  ...CM_STATUS_DETAIL_ORDER,
+  "For Charlotte's review"
+]);
 
-const CM_VIEW = "Default View_for dashboard";
+/** LV from column LV; everyone else 1 record = 1 LV. */
+const LV_COLUMN_CLIENTS = new Set([
+  "FanDuel",
+  "FanDuel Casino",
+  "FanDuel Racing",
+  "CreditNinja",
+  "Greenvelope"
+]);
 
 async function getAccess(apiToken) {
   const res = await fetch(SERVER + "/api/v2.1/dtable/app-access-token/", {
@@ -110,71 +131,33 @@ function resolveClient(row) {
   return null;
 }
 
-function resolveStatus(row) {
-  const v = pick(row, D + "C STATUS", "C STATUS", D + "C Status", "C Status");
-  return resolve(v);
-}
-
-function resolveLinkFormula(row) {
-  const v = pick(row, D + "Link formula", "Link formula", D + "Link Formula", "Link Formula");
-  if (v == null || v === "") return "";
+function resolveStatus1(row) {
+  const v = row["STATUS 1"];
   const r = resolve(v);
   return r ? String(r).trim() : "";
 }
 
-function hasTopicSuggestions(row) {
-  const v = pick(row, D + "Topic Suggestions", "Topic Suggestions", D + " Topic Suggestions");
-  if (v == null || v === "") return false;
+function resolveCmStatus(row) {
+  const v = pick(row, D + "CM Status", "CM Status", D + "CM status", "CM status");
   const r = resolve(v);
-  if (r == null || r === "") return false;
-  if (typeof r === "number") return !isNaN(r);
-  return String(r).trim().length > 0;
+  if (!r) return "";
+  const s = String(r).trim();
+  if (s === "For Charlotte's review") return "For Charlotte's Review";
+  return s;
 }
 
-function resolveLinkValue(row) {
-  const v = pick(row, D + "Link Value", "Link Value", D + " Link Value");
-  const n = parseFloat(String(resolve(v)).replace(/,/g, ""));
+function rawOmLv(row) {
+  const v = row["LV"];
+  const r = resolve(v);
+  const n = parseFloat(String(r != null ? r : "").replace(/,/g, ""));
   return isNaN(n) ? 0 : n;
 }
 
-/** Parse YYYY-MM-DD (or ISO start) or numeric date from SeaTable; compare in calendar Y/M (local). */
-function parseYmd(cellVal) {
-  if (cellVal == null || cellVal === "") return null;
-  const resolved = resolve(cellVal);
-  if (resolved == null || resolved === "") return null;
-  if (typeof resolved === "number" && !isNaN(resolved)) {
-    const d = new Date(resolved);
-    if (isNaN(d.getTime())) return null;
-    return { y: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };
+function rowLvUnit(client, rawLv) {
+  if (LV_COLUMN_CLIENTS.has(client)) {
+    return roundLv(rawLv);
   }
-  const s = String(resolved).trim().substring(0, 10);
-  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s);
-  if (!m) return null;
-  return { y: +m[1], month: +m[2], day: +m[3] };
-}
-
-function filterCmRowsByRequestedMonth(rows, year, month, warnings) {
-  const out = [];
-  let skippedNoDate = 0;
-  for (const row of rows) {
-    const raw = pick(row, D + "DATE REQUESTED", "DATE REQUESTED", D + "Date Requested", "Date Requested");
-    const ymd = parseYmd(raw);
-    if (!ymd) {
-      skippedNoDate += 1;
-      continue;
-    }
-    if (ymd.y !== year || ymd.month !== month) continue;
-    out.push(row);
-  }
-  if (skippedNoDate > 0) {
-    warnings.push({
-      type: "cm_missing_date_requested",
-      message:
-        skippedNoDate +
-        " CM row(s) skipped: DATE REQUESTED missing or not parseable as YYYY-MM-DD."
-    });
-  }
-  return out;
+  return 1;
 }
 
 function monthShort() {
@@ -189,10 +172,6 @@ function currentYear() {
   return new Date().getFullYear();
 }
 
-function currentMonthNum() {
-  return new Date().getMonth() + 1;
-}
-
 function metricZero() {
   return { lv: 0, records: 0 };
 }
@@ -203,16 +182,18 @@ function addMetric(m, lv) {
 }
 
 function emptyClientBuckets() {
-  const cr_detail = {};
-  for (const s of CONTENT_REQUESTED_DETAIL) cr_detail[s] = metricZero();
+  const cm_detail = {};
+  for (const s of CM_STATUS_DETAIL_ORDER) cm_detail[s] = metricZero();
   return {
     published: metricZero(),
     pending: metricZero(),
     content_requested: metricZero(),
-    cr_literal: metricZero(),
-    cr_detail,
-    cr_other_detail: metricZero(),
-    other: metricZero()
+    ready_for_delivery: metricZero(),
+    revisions_requested: metricZero(),
+    cm_cr_literal: metricZero(),
+    cm_detail,
+    cm_other: metricZero(),
+    outside_btf: metricZero()
   };
 }
 
@@ -220,36 +201,43 @@ function roundLv(x) {
   return Math.round(x * 100) / 100;
 }
 
-/**
- * linkFormula from "Link formula"; cStatus from "C STATUS".
- * LV totals: Published/Pending/Content Requested from link formula only.
- * C STATUS breakdown only when link formula is Content Requested.
- */
-function addRowToBuckets(b, linkFormula, cStatus, lv) {
-  const lf = linkFormula || "";
-  const cs = cStatus || "";
+function addOmRow(b, status1, cmStatus, lv) {
+  const s1 = status1 || "";
+  const cm = cmStatus || "";
 
-  if (lf === LF_PUBLISHED) {
-    addMetric(b.published, lv);
-    return;
-  }
-  if (lf === LF_PENDING) {
-    addMetric(b.pending, lv);
-    return;
-  }
-  if (lf === LF_CONTENT_REQUESTED) {
-    addMetric(b.content_requested, lv);
-    if (cs === CR_LITERAL) {
-      addMetric(b.cr_literal, lv);
-    } else if (CONTENT_REQUESTED_DETAIL.includes(cs)) {
-      addMetric(b.cr_detail[cs], lv);
-    } else {
-      addMetric(b.cr_other_detail, lv);
-    }
+  if (!BTF_STATUS.has(s1)) {
+    addMetric(b.outside_btf, lv);
     return;
   }
 
-  addMetric(b.other, lv);
+  switch (s1) {
+    case "Published":
+      addMetric(b.published, lv);
+      break;
+    case "Pending":
+      addMetric(b.pending, lv);
+      break;
+    case "Ready for Delivery":
+      addMetric(b.ready_for_delivery, lv);
+      break;
+    case "Revisions Requested":
+      addMetric(b.revisions_requested, lv);
+      break;
+    case STATUS_CONTENT_REQUESTED:
+      addMetric(b.content_requested, lv);
+      if (cm === CM_STATUS_CONTENT_REQUESTED || cm === "Content Requested") {
+        addMetric(b.cm_cr_literal, lv);
+      } else if (CM_STATUS_DETAIL_ORDER.includes(cm)) {
+        addMetric(b.cm_detail[cm], lv);
+      } else if (cm) {
+        addMetric(b.cm_other, lv);
+      } else {
+        addMetric(b.cm_other, lv);
+      }
+      break;
+    default:
+      addMetric(b.outside_btf, lv);
+  }
 }
 
 function mergeMetric(into, from) {
@@ -261,16 +249,42 @@ function mergeBuckets(into, from) {
   mergeMetric(into.published, from.published);
   mergeMetric(into.pending, from.pending);
   mergeMetric(into.content_requested, from.content_requested);
-  mergeMetric(into.cr_literal, from.cr_literal);
-  mergeMetric(into.cr_other_detail, from.cr_other_detail);
-  mergeMetric(into.other, from.other);
-  for (const s of CONTENT_REQUESTED_DETAIL) {
-    mergeMetric(into.cr_detail[s], from.cr_detail[s]);
+  mergeMetric(into.ready_for_delivery, from.ready_for_delivery);
+  mergeMetric(into.revisions_requested, from.revisions_requested);
+  mergeMetric(into.cm_cr_literal, from.cm_cr_literal);
+  mergeMetric(into.cm_other, from.cm_other);
+  mergeMetric(into.outside_btf, from.outside_btf);
+  for (const s of CM_STATUS_DETAIL_ORDER) {
+    mergeMetric(into.cm_detail[s], from.cm_detail[s]);
   }
 }
 
-function sumClassifiedLv(b) {
-  return roundLv(b.published.lv + b.pending.lv + b.content_requested.lv + b.other.lv);
+function derivedProduced(b) {
+  return {
+    lv: roundLv(b.published.lv + b.pending.lv + b.ready_for_delivery.lv),
+    records: b.published.records + b.pending.records + b.ready_for_delivery.records
+  };
+}
+
+function derivedStillToProduce(b) {
+  return {
+    lv: roundLv(b.content_requested.lv + b.revisions_requested.lv),
+    records: b.content_requested.records + b.revisions_requested.records
+  };
+}
+
+function btfTotal(b) {
+  return roundLv(
+    b.published.lv +
+      b.pending.lv +
+      b.content_requested.lv +
+      b.ready_for_delivery.lv +
+      b.revisions_requested.lv );
+}
+
+function sumAllBucketsLv(b) {
+  let s = btfTotal(b) + b.outside_btf.lv;
+  return roundLv(s);
 }
 
 export default async function handler(req, res) {
@@ -286,7 +300,6 @@ export default async function handler(req, res) {
     const PM = prodMonth();
     const MS = monthShort();
     const CY = currentYear();
-    const CAL_M = currentMonthNum();
 
     const hssAccess = await getAccess(HSS_TOKEN);
     if (!hssAccess.dtable_server || !hssAccess.dtable_uuid || !hssAccess.access_token) {
@@ -305,34 +318,12 @@ export default async function handler(req, res) {
       throw new Error("QUOTAS table fetch failed: " + e.message);
     }
 
-    let cmRows;
-    let cmViewUsed = CM_VIEW;
+    let omRows;
     try {
-      cmRows = await listRows(hssAccess, "CM", CM_VIEW);
-    } catch (cmErr) {
-      try {
-        cmRows = await listRows(hssAccess, "CM", "");
-        cmViewUsed = "";
-        warnings.push({
-          type: "cm_view_fallback",
-          message:
-            "CM view \"" +
-            CM_VIEW +
-            "\" failed: " +
-            cmErr.message +
-            " Using all CM rows (no view filter)."
-        });
-      } catch (cmErr2) {
-        throw new Error(
-          "CM table failed with view: " +
-            cmErr.message +
-            " | without view: " +
-            cmErr2.message
-        );
-      }
+      omRows = await listRows(hssAccess, "OM", OM_VIEW);
+    } catch (e) {
+      throw new Error("OM table fetch failed: " + e.message);
     }
-
-    const cmRowsMonth = filterCmRowsByRequestedMonth(cmRows, CY, CAL_M, warnings);
 
     const quotas = {};
     for (const row of quotaRows) {
@@ -347,162 +338,153 @@ export default async function handler(req, res) {
     }
 
     const byClient = {};
-    const unknownLfCounts = {};
-    const unknownCrCstatus = {};
+    const unknownS1 = {};
+    const unknownCm = {};
     let skippedNoClient = 0;
+    let lvSumCheck = 0;
 
-    let cmLvSumCheck = 0;
+    for (const row of omRows) {
+      const pm = (row["Prod Month"] || "").trim();
+      if (pm !== PM) continue;
 
-    const contentInsights = {
-      c_status_content_requested: {
-        row_count: 0,
-        with_topic_suggestions_count: 0
-      },
-      c_status_ready_for_edits_row_count: 0
-    };
-
-    for (const row of cmRowsMonth) {
       const client = resolveClient(row);
-      const lf = resolveLinkFormula(row);
-      const statusRaw = resolveStatus(row);
-      const status = statusRaw ? String(statusRaw).trim() : "";
-      const lv = resolveLinkValue(row);
+      const s1 = resolveStatus1(row);
+      const cm = resolveCmStatus(row);
+      const rawLv = rawOmLv(row);
+      const lv = rowLvUnit(client, rawLv);
 
       if (!client) {
         skippedNoClient += 1;
         continue;
       }
 
-      cmLvSumCheck += lv;
-
-      if (status === CR_LITERAL) {
-        contentInsights.c_status_content_requested.row_count += 1;
-        if (hasTopicSuggestions(row)) {
-          contentInsights.c_status_content_requested.with_topic_suggestions_count += 1;
-        }
-      }
-      if (status === "Ready for Edits") {
-        contentInsights.c_status_ready_for_edits_row_count += 1;
-      }
+      lvSumCheck += lv;
 
       if (!byClient[client]) {
         byClient[client] = emptyClientBuckets();
       }
 
-      if (lf && !LINK_FORMULA_ALLOWED.has(lf)) {
-        unknownLfCounts[lf] = (unknownLfCounts[lf] || 0) + 1;
+      if (s1 && !BTF_STATUS.has(s1)) {
+        unknownS1[s1] = (unknownS1[s1] || 0) + 1;
       }
-      if (lf === LF_CONTENT_REQUESTED && status && !CSTATUS_UNDER_CR.has(status)) {
-        unknownCrCstatus[status] = (unknownCrCstatus[status] || 0) + 1;
+      if (s1 === STATUS_CONTENT_REQUESTED && cm && !CM_STATUS_KNOWN.has(cm)) {
+        unknownCm[cm] = (unknownCm[cm] || 0) + 1;
       }
 
-      addRowToBuckets(byClient[client], lf, status, lv);
+      addOmRow(byClient[client], s1, cm, lv);
     }
 
     if (skippedNoClient > 0) {
       warnings.push({
         type: "missing_client",
-        message: skippedNoClient + " CM row(s) skipped: missing client/project column."
-      });
-    }
-    if (cmRowsMonth.length > 0 && skippedNoClient === cmRowsMonth.length) {
-      const sample = cmRowsMonth[0];
-      warnings.push({
-        type: "client_column_mismatch",
-        message:
-          "No CM row resolved a client. Sample column keys: " +
-          Object.keys(sample)
-            .slice(0, 45)
-            .map(k => JSON.stringify(k))
-            .join(", ")
+        message: skippedNoClient + " OM row(s) skipped: missing client column."
       });
     }
 
-    for (const k of Object.keys(unknownLfCounts)) {
+    for (const k of Object.keys(unknownS1)) {
       warnings.push({
-        type: "unknown_link_formula",
-        message: "Unknown Link formula value: " + JSON.stringify(k) + " (" + unknownLfCounts[k] + " rows)."
+        type: "unknown_status_1",
+        message: "STATUS 1 outside BTF (e.g. negotiation): " + JSON.stringify(k) + " (" + unknownS1[k] + " rows)."
       });
     }
-    for (const k of Object.keys(unknownCrCstatus)) {
+    for (const k of Object.keys(unknownCm)) {
       warnings.push({
-        type: "unknown_c_status_under_cr",
-        message:
-          "C STATUS not in content breakdown while Link formula is Content Requested: " +
-          JSON.stringify(k) +
-          " (" +
-          unknownCrCstatus[k] +
-          " rows)."
+        type: "unknown_cm_status",
+        message: "Unknown CM Status under Content Requested: " + JSON.stringify(k) + " (" + unknownCm[k] + " rows)."
       });
     }
 
     const allClients = [...new Set([...Object.keys(byClient), ...Object.keys(quotas)])].sort();
 
     const globalBuckets = emptyClientBuckets();
-    let globalTotalRecords = 0;
+    let globalRecords = 0;
 
     const clients = allClients.map(name => {
       const b = byClient[name] || emptyClientBuckets();
       mergeBuckets(globalBuckets, b);
-      globalTotalRecords += b.published.records + b.pending.records + b.content_requested.records + b.other.records;
+      globalRecords +=
+        b.published.records +
+        b.pending.records +
+        b.content_requested.records +
+        b.ready_for_delivery.records +
+        b.revisions_requested.records +
+        b.outside_btf.records;
 
       const quota = quotas[name] || 0;
-      const rowOut = {
+      const produced = derivedProduced(b);
+      const still = derivedStillToProduce(b);
+      const btfRec =
+        b.published.records +
+        b.pending.records +
+        b.content_requested.records +
+        b.ready_for_delivery.records +
+        b.revisions_requested.records;
+
+      return {
         client: name,
         quota,
         published: b.published,
         pending: b.pending,
+        ready_for_delivery: b.ready_for_delivery,
         content_requested: b.content_requested,
-        cr_literal: b.cr_literal,
-        cr_detail: b.cr_detail,
-        cr_other_detail: b.cr_other_detail,
-        other: b.other
+        revisions_requested: b.revisions_requested,
+        produced,
+        still_to_produce: still,
+        btf_total: { lv: btfTotal(b), records: btfRec },
+        cm_cr_literal: b.cm_cr_literal,
+        cm_detail: b.cm_detail,
+        cm_other: b.cm_other,
+        outside_btf: b.outside_btf
       };
-
-      return rowOut;
     });
 
-    const recomputedLv = sumClassifiedLv(globalBuckets);
-    if (Math.abs(recomputedLv - cmLvSumCheck) > 0.01) {
+    const recomputed = sumAllBucketsLv(globalBuckets);
+    if (Math.abs(recomputed - lvSumCheck) > 0.01) {
       warnings.push({
         type: "lv_sum_mismatch",
         message:
-          "Aggregated LV (" +
-          recomputedLv +
-          ") differs from row sum (" +
-          roundLv(cmLvSumCheck) +
-          "); check rounding or skipped rows."
+          "Aggregated LV (" + recomputed + ") differs from row sum (" + roundLv(lvSumCheck) + ")."
       });
     }
 
     const totQuota = allClients.reduce((s, n) => s + (quotas[n] || 0), 0);
-    const quotaAttainmentPct =
-      totQuota > 0 ? Math.round((globalBuckets.published.lv / totQuota) * 100) : 0;
+    const gProd = derivedProduced(globalBuckets);
+    const quotaAttainmentPct = totQuota > 0 ? Math.round((gProd.lv / totQuota) * 100) : 0;
+
+    const gBtfRec =
+      globalBuckets.published.records +
+      globalBuckets.pending.records +
+      globalBuckets.content_requested.records +
+      globalBuckets.ready_for_delivery.records +
+      globalBuckets.revisions_requested.records;
 
     return res.status(200).json({
       ok: true,
       generated: new Date().toISOString(),
       prod_month: PM,
       warnings,
-      content_requested_detail_order: CONTENT_REQUESTED_DETAIL,
+      cm_status_detail_order: CM_STATUS_DETAIL_ORDER,
+      lv_column_clients: [...LV_COLUMN_CLIENTS],
       global: {
         published: globalBuckets.published,
         pending: globalBuckets.pending,
+        ready_for_delivery: globalBuckets.ready_for_delivery,
         content_requested: globalBuckets.content_requested,
-        cr_literal: globalBuckets.cr_literal,
-        cr_detail: globalBuckets.cr_detail,
-        cr_other_detail: globalBuckets.cr_other_detail,
-        other: globalBuckets.other,
+        revisions_requested: globalBuckets.revisions_requested,
+        produced: derivedProduced(globalBuckets),
+        still_to_produce: derivedStillToProduce(globalBuckets),
+        cm_cr_literal: globalBuckets.cm_cr_literal,
+        cm_detail: globalBuckets.cm_detail,
+        cm_other: globalBuckets.cm_other,
+        outside_btf: globalBuckets.outside_btf,
+        btf_total: { lv: btfTotal(globalBuckets), records: gBtfRec },
         total_quota: roundLv(totQuota),
         quota_attainment_pct: quotaAttainmentPct,
-        total_records: globalTotalRecords
+        total_records: globalRecords
       },
-      content_insights: contentInsights,
       debug: {
-        cm_rows_fetched: cmRows.length,
-        cm_rows_date_requested_month: cmRowsMonth.length,
-        date_requested_filter_ym: CY + "-" + String(CAL_M).padStart(2, "0"),
-        cm_view: cmViewUsed || "(all rows)",
+        om_rows_in_month: omRows.filter(r => (r["Prod Month"] || "").trim() === PM).length,
+        om_view: OM_VIEW,
         quotas_loaded: Object.keys(quotas).length,
         clients: allClients.length
       },

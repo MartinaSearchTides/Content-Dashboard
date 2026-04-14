@@ -177,10 +177,6 @@ body { font-family: var(--fs); background: var(--bg); color: var(--text); min-he
 
   <div class="summary-bar" id="summary-bar"></div>
 
-  <h2 class="section-title">Content signals (counts, all clients)</h2>
-  <p style="font-size:12px;color:var(--muted);font-family:var(--fm);margin:-0.5rem 0 1rem;">Rows in current DATE REQUESTED month. Not LV.</p>
-  <div class="summary-bar" id="insights-bar" style="grid-template-columns: repeat(2, 1fr); max-width: 900px;"></div>
-
   <h2 class="section-title">By project</h2>
   <div class="clients-grid" id="clients-grid"></div>
 </div>
@@ -244,29 +240,34 @@ function renderWarnings(warnings) {
     "</ul>";
 }
 
+function clientUsesLv(name) {
+  var list = globalJson.lv_column_clients || [];
+  return list.indexOf(name) !== -1;
+}
+
 function renderSummary() {
   var g = globalJson.global;
-  var pub = pickMetric(g.published);
-  var pen = pickMetric(g.pending);
-  var cr = pickMetric(g.content_requested);
+  var prod = pickMetric(g.produced);
+  var still = pickMetric(g.still_to_produce);
+  var pipe = pickMetric(g.btf_total);
   var att = g.quota_attainment_pct;
   var attPc = pcClass(att);
   var qFmt = (Math.round(g.total_quota * 100) / 100).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
   document.getElementById("summary-bar").innerHTML =
-    '<div class="sum-tile"><div class="sum-label">Published</div><div class="sum-value sv-teal">' +
-    fmtMetric(pub) +
-    '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Pending</div><div class="sum-value sv-purple">' +
-    fmtMetric(pen) +
-    '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Content Requested (total)</div><div class="sum-value sv-amber">' +
-    fmtMetric(cr) +
-    '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">BTF target (LV)</div><div class="sum-value sv-neutral">' +
+    '<div class="sum-tile"><div class="sum-label">Produced</div><div class="sum-value sv-teal">' +
+    fmtMetric(prod) +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">Pub + Pending + Ready</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">Still to produce</div><div class="sum-value sv-amber">' +
+    fmtMetric(still) +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">Content Req + Revisions Req</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">BTF pipeline</div><div class="sum-value sv-purple">' +
+    fmtMetric(pipe) +
+    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">All five STATUS 1 in BTF</div></div>' +
+    '<div class="sum-tile"><div class="sum-label">BTF target (quota LV)</div><div class="sum-value sv-neutral">' +
     qFmt +
     '</div></div>' +
-    '<div class="sum-tile"><div class="sum-label">Quota attainment (Published)</div><div class="sum-value ' +
+    '<div class="sum-tile"><div class="sum-label">Quota attainment (produced)</div><div class="sum-value ' +
     sumClass(attPc) +
     '">' +
     att +
@@ -276,18 +277,21 @@ function renderSummary() {
 function renderCards() {
   var grid = document.getElementById("clients-grid");
   grid.innerHTML = "";
-  var dOrder = globalJson.content_requested_detail_order || [];
+  var dOrder = globalJson.cm_status_detail_order || [];
 
   globalJson.clients.forEach(function (c) {
     var quota = n(c.quota);
     var pub = pickMetric(c.published);
     var pen = pickMetric(c.pending);
+    var rfd = pickMetric(c.ready_for_delivery);
     var cr = pickMetric(c.content_requested);
-    var pipeline = pub + pen + cr;
-    var pPub = pct(pub, quota);
-    var pc = pcClass(pPub);
-    var pipPct = pct(pipeline, quota);
-    var pipOk = pipeline >= quota;
+    var rev = pickMetric(c.revisions_requested);
+    var produced = pickMetric(c.produced);
+    var btf = pickMetric(c.btf_total);
+    var pProd = pct(produced, quota);
+    var pc = pcClass(pProd);
+    var pipPct = pct(btf, quota);
+    var pipOk = btf >= quota;
 
     var leftRows =
       '<div class="status-row"><span class="s-name s-name-pub">Published</span><span class="s-val s-val-pub">' +
@@ -296,24 +300,31 @@ function renderCards() {
       '<div class="status-row"><span class="s-name">Pending</span><span class="s-val">' +
       fmtMetric(pen) +
       "</span></div>" +
+      '<div class="status-row"><span class="s-name">Ready for Delivery</span><span class="s-val">' +
+      fmtMetric(rfd) +
+      "</span></div>" +
       '<div class="status-row"><span class="s-name">Content Requested</span><span class="s-val">' +
       fmtMetric(cr) +
+      "</span></div>" +
+      '<div class="status-row"><span class="s-name">Revisions Requested</span><span class="s-val">' +
+      fmtMetric(rev) +
       "</span></div>";
 
-    if (pickMetric(c.other) > 0) {
+    if (pickMetric(c.outside_btf) > 0) {
       leftRows +=
-        '<div class="status-row"><span class="s-name" style="color:var(--red)">Other (Link formula)</span><span class="s-val">' +
-        fmtMetric(c.other) +
+        '<div class="status-row"><span class="s-name" style="color:var(--red)">Outside BTF (STATUS 1)</span><span class="s-val">' +
+        fmtMetric(c.outside_btf) +
         "</span></div>";
     }
 
-    var crLit = pickMetric(c.cr_literal);
+    var cmLit = pickMetric(c.cm_cr_literal);
     var rightDetail =
-      '<div class="status-row"><span class="s-name">Content Requested</span><span class="s-val">' +
-      fmtMetric(crLit) +
+      '<div class="status-row"><span class="s-name">CM: Content Requested</span><span class="s-val">' +
+      fmtMetric(cmLit) +
       "</span></div>";
     dOrder.forEach(function (st) {
-      var cell = c.cr_detail[st] || { lv: 0, records: 0 };
+      var detail = c.cm_detail || {};
+      var cell = detail[st] || { lv: 0, records: 0 };
       rightDetail +=
         '<div class="status-row"><span class="s-name">' +
         esc(st) +
@@ -321,52 +332,63 @@ function renderCards() {
         fmtMetric(pickMetric(cell)) +
         "</span></div>";
     });
-    if (pickMetric(c.cr_other_detail) > 0) {
+    if (pickMetric(c.cm_other) > 0) {
       rightDetail +=
-        '<div class="status-row"><span class="s-name" style="color:var(--amber)">Other C STATUS (in CR)</span><span class="s-val">' +
-        fmtMetric(c.cr_other_detail) +
+        '<div class="status-row"><span class="s-name" style="color:var(--amber)">Other CM Status</span><span class="s-val">' +
+        fmtMetric(c.cm_other) +
         "</span></div>";
     }
+
+    var usesLv = clientUsesLv(c.client);
+    var quotaPill =
+      '<div class="quota-pill" title="' +
+      (usesLv ? "LV from OM LV column" : "1 record = 1 LV") +
+      '">quota <strong>' +
+      fmtMetric(quota) +
+      "</strong> LV" +
+      (usesLv ? "" : " · 1 rec = 1 LV") +
+      "</div>";
 
     var card = document.createElement("div");
     card.className = "client-card";
     card.innerHTML =
       '<div class="card-header"><div class="client-name">' +
       esc(c.client) +
-      '</div><div class="quota-pill">quota <strong>' +
-      fmtMetric(quota) +
-      "</strong> LV</div></div>" +
+      (usesLv ? ' <span style="font-size:11px;font-weight:500;color:var(--muted);font-family:var(--fm)">Articles + LV</span>' : "") +
+      "</div>" +
+      quotaPill +
+      "</div>" +
       '<div class="progress-wrap">' +
-      '<div class="progress-labels"><span>Published vs quota</span><span class="progress-pct ppc-' +
+      '<div class="progress-labels"><span>Produced vs quota</span><span class="progress-pct ppc-' +
       pc +
       '">' +
-      pPub +
+      pProd +
       "%</span></div>" +
       '<div class="progress-track"><div class="progress-fill pf-' +
       pc +
       '" style="width:' +
-      Math.min(pPub, 100) +
+      Math.min(pProd, 100) +
       '%"></div></div>' +
       '<div class="pipeline-indicator"><div class="pip-dot ' +
       (pipOk ? "pip-ok" : "pip-warn") +
-      '"></div>Pipeline ' +
-      fmtMetric(pipeline) +
+      '"></div>BTF pipeline ' +
+      fmtMetric(btf) +
       " (" +
       pipPct +
       "% of quota)" +
-      (pipOk ? " - covered" : "") +
+      (pipOk ? " — covered" : "") +
       "</div></div>" +
       '<div class="funnels">' +
       '<div class="funnel-col">' +
-      '<div class="funnel-heading fh-pipe"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>Pipeline</div>' +
+      '<div class="funnel-heading fh-pipe"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--teal)"/></svg>BTF (STATUS 1)</div>' +
       '<div class="funnel-total ft-pipe">' +
-      fmtMetric(pipeline) +
+      fmtMetric(btf) +
       "</div>" +
       '<div class="status-list">' +
       leftRows +
       "</div></div>" +
       '<div class="funnel-col">' +
-      '<div class="funnel-heading fh-cr"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--purple)"/></svg>Under Content Requested</div>' +
+      '<div class="funnel-heading fh-cr"><svg width="6" height="6" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="var(--purple)"/></svg>CM Status (Content Requested)</div>' +
       '<div class="funnel-total ft-cr">' +
       fmtMetric(cr) +
       "</div>" +
@@ -378,26 +400,9 @@ function renderCards() {
   });
 }
 
-function renderInsights() {
-  var ins = globalJson.content_insights;
-  if (!ins) return;
-  var cr = ins.c_status_content_requested || { row_count: 0, with_topic_suggestions_count: 0 };
-  var rfe = ins.c_status_ready_for_edits_row_count || 0;
-  document.getElementById("insights-bar").innerHTML =
-    '<div class="sum-tile"><div class="sum-label">C STATUS Content Requested</div><div class="sum-value sv-neutral">' +
-    cr.row_count.toLocaleString("en-US") +
-    '</div><div class="sum-label" style="margin-top:8px;opacity:0.9">With topic suggestions (non-empty)</div><div class="sum-value sv-teal" style="font-size:22px;margin-top:4px">' +
-    cr.with_topic_suggestions_count.toLocaleString("en-US") +
-    "</div></div>" +
-    '<div class="sum-tile"><div class="sum-label">C STATUS Ready for Edits</div><div class="sum-value sv-warn">' +
-    rfe.toLocaleString("en-US") +
-    '</div><div class="sum-label" style="margin-top:8px;opacity:0.85">Article count</div></div>';
-}
-
 function renderAll() {
   renderWarnings(globalJson.warnings);
   renderSummary();
-  renderInsights();
   renderCards();
 }
 
